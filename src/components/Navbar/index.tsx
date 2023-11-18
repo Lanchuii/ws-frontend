@@ -5,12 +5,10 @@ const Navbar = () => {
     <nav className="bg-gray-800 p-4">
       <div className="container mx-auto">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <div className="text-white font-bold text-lg">
             TLLCC Worship Schedule
           </div>
 
-          {/* Navigation Links */}
           <ul className="flex space-x-4">
             <li>
               <Link to='/' className="text-white hover:text-gray-300">
