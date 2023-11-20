@@ -1,4 +1,5 @@
 import SchedItem from "../../models/SchedItem"
+import { FaCircleCheck, FaCircleChevronRight } from "react-icons/fa6";
 
 interface Props {
   sched: SchedItem
@@ -11,7 +12,7 @@ interface Props {
 const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Props) => {
   return (
     <div className='flex flex-col gap'>
-      <form onSubmit={()=>handleEdit(sched._id)}>
+      <form onSubmit={()=>handleEdit(sched._id)} className="flex flex-col">
         <select
           className="mb-2 h-6 shadow-inner ml-7"
           id="leader"
@@ -159,18 +160,19 @@ const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Pro
             <option value="Jacob">Jacob</option>
         </select>
 
-        <div className="flex gap-4 ml-2">
+        <div className="flex gap-4 ml-8">
           <button 
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 focus:outline-none focus:shadow-outline-green"
             type="submit"
           >
-            Done
+            <FaCircleCheck />
           </button>
           <button 
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none focus:shadow-outline-red"
+            type="button"
             onClick={()=>setEdit('')}
           >
-            Cancel
+            <FaCircleChevronRight />
           </button>
         </div>
     </form>

@@ -15,9 +15,10 @@ interface Props {
 
 const ScheduleList = ({scheds, edit, setEdit, schedData, setSchedData, handleDeleteSched, handleEdit, permission}: Props) => {
   return (
-    <div className='grid lg:grid-cols-4 gap-14 mt-10 mx-5'>
-      {scheds.map(sched=>(
+    <div className='grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-14 mt-10 mx-5'>
+      {scheds.map((sched)=>(
         <ScheduleCard
+          key={sched._id}
           sched={sched}
           edit={edit}
           setEdit={setEdit}

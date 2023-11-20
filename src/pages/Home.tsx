@@ -6,6 +6,8 @@ import CreateScheduleModal from '../components/ScheduleComponents/CreateSchedule
 import PermissionModal from '../components/ScheduleComponents/PermissionModal';
 
 const Home = () => {
+  const URL = import.meta.env.VITE_REACT_APP_API_URL
+
   const [scheds, setScheds] = useState<SchedItem[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState<boolean>(false)
@@ -30,7 +32,7 @@ const Home = () => {
   useEffect(()=>{
     setLoading(true)
     axios
-      .get('http://localhost:3000/schedule/')
+      .get(`${URL}/schedule/`)
       .then(res => {
         setScheds(res.data.data);
         setLoading(false)
@@ -44,7 +46,7 @@ const Home = () => {
   const updateScheduleList = () => {
     setLoading(true);
     axios
-      .get('http://localhost:3000/schedule/')
+      .get(`${URL}/schedule/`)
       .then((res) => {
         setScheds(res.data.data);
         setLoading(false);
@@ -57,7 +59,7 @@ const Home = () => {
 
   const handleDeleteSched = (id: string) => {
     axios
-      .delete(`http://localhost:3000/schedule/${id}`)
+      .delete(`${URL}/schedule/${id}`)
       .then(()=>{
         setScheds((prevScheds) =>
           prevScheds.filter((sched) => sched._id !== id)
@@ -71,7 +73,7 @@ const Home = () => {
 
   const handleEdit = (id: string) => {
     axios
-      .put(`http://localhost:3000/schedule/${id}`, schedData)
+      .put(`${URL}/schedule/${id}`, schedData)
       .catch(error=>{
         console.log(error)
       })
@@ -119,6 +121,7 @@ const Home = () => {
           </button>
           { showCreate ? 
             <CreateScheduleModal 
+              URL={URL}
               showCreate={showCreate} 
               setShowCreate={setShowCreate}
               updateScheduleList={updateScheduleList}

@@ -17,8 +17,6 @@ const ScheduleCard = ({sched, edit, setEdit, schedData, setSchedData, handleDele
   const toggleEdit =(id: string, sched: SchedItem) => {
     setEdit(id)
     setSchedData(sched)
-
-    console.log(sched)
   }
 
   const formatAndDisplayDate = (dateString: any) => {
@@ -32,9 +30,9 @@ const ScheduleCard = ({sched, edit, setEdit, schedData, setSchedData, handleDele
   };
   
   return (
-    <div key={sched._id} className='shadow-lg rounded-lg bg-gray-100'>
+    <div className='shadow-lg rounded-lg bg-gray-100'>
 
-          <div className='flex bg-gray-900 shadow-md text-white p-4 border-b-2 justify-between'>
+          <div key={sched._id} className='flex bg-gray-900 shadow-md text-white p-4 border-b-2 justify-between'>
             <p>{formatAndDisplayDate(sched.date)}</p>
 
             { permission ? (
@@ -51,7 +49,7 @@ const ScheduleCard = ({sched, edit, setEdit, schedData, setSchedData, handleDele
             
           </div>
 
-          <div key={sched._id} className="flex p-4">
+          <div className="flex p-4">
 
             <div className='flex flex-col gap-2 font-bold'>
               <p>Leader:</p>

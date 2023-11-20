@@ -8,12 +8,13 @@ interface Props {
 }
 
 const PermissionModal = ({permissionModal, setPermissionModal, setPermission}: Props) => {
+  const SET_PASS = import.meta.env.VITE_SET_PASSWORD
   const [permissionPass, setPermissionPass] = useState<string>('')
 
   const handlePermission = (event: React.FormEvent<HTMLFormElement>, permissionPass: string) => {
     event.preventDefault();
 
-    if (permissionPass === 'lampstand123') {
+    if (permissionPass === SET_PASS) {
       setPermission(true)
     }
     else {

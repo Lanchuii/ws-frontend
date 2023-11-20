@@ -5,12 +5,14 @@ import { IoIosArrowDroprightCircle, IoIosArrowDropleftCircle } from "react-icons
 import { RxCross2 } from "react-icons/rx";
 
 interface Props {
+  URL: string
   showCreate: boolean
   setShowCreate: React.Dispatch<React.SetStateAction<boolean>>
   updateScheduleList: () => void
 }
 
-const CreateScheduleModal = ({showCreate, setShowCreate, updateScheduleList}: Props) => {
+const CreateScheduleModal = ({URL, showCreate, setShowCreate, updateScheduleList}: Props) => {
+  
   const [currentPage, setCurrentPage] = useState(1)
   const [schedData, setSchedData] = useState<SchedItem>({
     _id: "",
@@ -37,7 +39,7 @@ const CreateScheduleModal = ({showCreate, setShowCreate, updateScheduleList}: Pr
     event.preventDefault();
 
     try { 
-      const response = await axios.post('http://localhost:3000/schedule', schedData);
+      const response = await axios.post(`${URL}/schedule`, schedData);
 
       console.log(response.data); // Handle success
 
@@ -59,9 +61,9 @@ const CreateScheduleModal = ({showCreate, setShowCreate, updateScheduleList}: Pr
             <RxCross2 />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className='flex flex-col lg:w-3/4 mx-auto mt-4'>
+        <form onSubmit={handleSubmit} className='flex flex-col md:w-3/4 mx-auto mt-4'>
           { currentPage == 1 ? (
-            <div className='flex flex-col lg:w-3/4 mx-auto'>
+            <div className='flex flex-col sm:w-3/4 mx-auto'>
             <label htmlFor="date" className='font-bold text-lg m-auto'>Date:</label>
             <input
               type="date"
@@ -84,7 +86,6 @@ const CreateScheduleModal = ({showCreate, setShowCreate, updateScheduleList}: Pr
                   onChange={(event) => {
                     if (event.target) {
                       setSchedData({ ...schedData, leader: event.target.value });
-                      console.log(schedData)
                     }
                   }}
               >
@@ -154,7 +155,7 @@ const CreateScheduleModal = ({showCreate, setShowCreate, updateScheduleList}: Pr
             </div>
           ) : ''}
           { currentPage === 2 ? (
-            <div className='flex flex-col lg:w-3/4 mx-auto'>
+            <div className='flex flex-col sm:w-3/4 mx-auto'>
             <div className='mt-3 m-auto'>
               <h2 className='font-bold text-lg  text-center'>Instuments</h2>
               <div className='flex gap-2 text-white'>
