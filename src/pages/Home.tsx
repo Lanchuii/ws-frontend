@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import SchedItem from '../models/SchedItem'
-import CreateScheduleModal from '../components/CreateScheduleModal'
-import { MdDelete, MdEdit } from "react-icons/md";
-import EditSchedule from '../components/EditSchedule';
+import ScheduleList from '../components/ScheduleComponents/ScheduleList';
+import CreateScheduleModal from '../components/ScheduleComponents/CreateScheduleModal';
+import PermissionModal from '../components/ScheduleComponents/PermissionModal';
 
 const Home = () => {
   const [scheds, setScheds] = useState<SchedItem[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState<boolean>(false)
   const [edit, setEdit] = useState<string>('')
+
+  const [permissionModal, setPermissionModal] = useState(false)
+  const [permission, setPermission] = useState(false)
 
   const [schedData, setSchedData] = useState<SchedItem>({
     _id: "",
@@ -36,23 +39,34 @@ const Home = () => {
         console.log(error);
         setLoading(false)
       });
-  }, []);
+  }, [edit, schedData]);
+
+  const updateScheduleList = () => {
+    setLoading(true);
+    axios
+      .get('http://localhost:3000/schedule/')
+      .then((res) => {
+        setScheds(res.data.data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      });
+  };
 
   const handleDeleteSched = (id: string) => {
     axios
       .delete(`http://localhost:3000/schedule/${id}`)
+      .then(()=>{
+        setScheds((prevScheds) =>
+          prevScheds.filter((sched) => sched._id !== id)
+      );
+      })
       .catch(error=>{
         console.log(error)
       })
 
-      window.location.reload();
-  }
-
-  const toggleEdit =(id: string, sched: SchedItem) => {
-    setEdit(id)
-    setSchedData(sched)
-
-    console.log(sched)
   }
 
   const handleEdit = (id: string) => {
@@ -63,81 +77,54 @@ const Home = () => {
       })
       
       setEdit('')
-      window.location.reload();
   }
 
-  const formatAndDisplayDate = (dateString: any) => {
-    const date = new Date(dateString);
-    const formattedDate = date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: '2-digit',
-    });
-    return formattedDate;
-  };
-
   return (
-    <div className='p-10'>
+    <div className='mt-8 sm:mx-10 lg:mx-20'>
+      <div className='flex justify-between'>
+        <h1 className='mb-5 text-5xl font-bold text-yellow-600'>Main</h1>
+        <button
+          onClick={() => setPermissionModal(!permissionModal)}
+          className="bg-yellow-400 text-gray-900 font-bold shadow-md mt-2 mb-8 py-2 px-4 rounded-md hover:bg-gray-900 hover:text-white focus:outline-none focus:shadow-outline-blue"
+        >
+          Set Schedules
+        </button>
+      </div>
       { loading ? 'loading' : 
-        <div className='grid lg:grid-cols-4 gap-4'>
-          {scheds.map(sched=>(
-            <div key={sched._id} className='shadow-lg rounded-lg'>
-              <div className='flex bg-gray-800 text-white p-4 border-b-2 justify-between'>
-                <p>{formatAndDisplayDate(sched.date)}</p>
-                <div className='flex items-center gap-2'>
-                <button onClick={()=>toggleEdit(sched._id, sched)}> 
-                  <MdEdit className='text-green-600 cursor-pointer'/>
-                </button>
-                <button onClick={()=>handleDeleteSched(sched._id)}>
-                  <MdDelete className='text-red-600 cursor-pointer' />
-                </button>
-                </div>
-              </div>
-              <div key={sched._id} className="flex p-4">
-                <div className='flex flex-col gap-2 font-bold'>
-                  <p>Leader:</p>
-                  <p>Backup 1:</p>
-                  <p>Backup 2:</p>
-                  <p>Acoustic:</p>
-                  <p>Electric:</p>
-                  <p>Keyboard:</p>
-                  <p>Bass:</p>
-                  <p>Drums:</p>
-                </div>
-                { edit === sched._id ? (
-                  <EditSchedule 
-                    sched={sched}
-                    schedData={schedData}
-                    setSchedData={setSchedData}
-                    handleEdit={handleEdit}
-                    setEdit={setEdit}
-                  />
-                ) : (
-                  <div className='flex flex-col gap-2 ml-8'>
-                    <p>{sched.leader}</p>
-                    <p>{sched.backup1}</p>
-                    <p>{sched.backup2}</p>
-                    <p>{sched.acoustic}</p>
-                    <p>{sched.electric}</p>
-                    <p>{sched.keyboard}</p>
-                    <p>{sched.bass}</p>
-                    <p>{sched.drums}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <ScheduleList
+          scheds={scheds}
+          edit={edit}
+          setEdit={setEdit}
+          schedData={schedData}
+          setSchedData={setSchedData}
+          handleDeleteSched={handleDeleteSched}
+          handleEdit={handleEdit}
+          permission={permission}
+        />
       }
-      <button
-        onClick={() => setShowCreate(!showCreate)}
-        className="bg-blue-500 mx-auto shadow-md text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:shadow-outline-blue"
-      >
-        Create New Schedule
-      </button>
-      { showCreate ? 
-        <CreateScheduleModal showCreate={showCreate} setShowCreate={setShowCreate} /> : ''
+      { permissionModal ? 
+        <PermissionModal
+          permissionModal={permissionModal}
+          setPermissionModal={setPermissionModal}
+          setPermission={setPermission}
+        /> : ''
       }
+      { permission ? 
+        <div className='flex justify-center mt-10'>
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="bg-yellow-400 text-gray-900 font-bold shadow-md mb-10 py-2 px-4 rounded-md hover:bg-gray-900 hover:text-white focus:outline-none focus:shadow-outline-blue"
+          >
+            Create New Schedule
+          </button>
+          { showCreate ? 
+            <CreateScheduleModal 
+              showCreate={showCreate} 
+              setShowCreate={setShowCreate}
+              updateScheduleList={updateScheduleList}
+            /> : ''
+          }
+        </div> : ''}
     </div>
   )
 }

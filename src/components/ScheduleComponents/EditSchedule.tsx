@@ -1,4 +1,4 @@
-import SchedItem from "../models/SchedItem";
+import SchedItem from "../../models/SchedItem"
 
 interface Props {
   sched: SchedItem
