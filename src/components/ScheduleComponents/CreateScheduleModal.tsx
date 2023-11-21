@@ -29,7 +29,12 @@ const CreateScheduleModal = ({URL, showCreate, setShowCreate, updateScheduleList
 
   const handlePage = (currPage: number) => {
     if(currPage === 1){
-      setCurrentPage(currPage+1)
+
+      if(schedData.leader !== schedData.backup1 && schedData.leader !== schedData.backup2 && schedData.backup1 !== schedData.backup2){
+        setCurrentPage(currPage+1)
+      } else {
+        alert('only one vocalist can be assigned for each')
+      }
     } else if(currPage === 2) {
       setCurrentPage(currPage - 1)
     }
