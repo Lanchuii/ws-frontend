@@ -7,7 +7,7 @@ import Footer from './components/Footer'
 function App() {
 
   return (
-    <div className='bg-gray-800 flex flex-col min-h-screen'>
+    <div className='bg-gradient-to-b from-gray-900 to-gray-800 flex flex-col min-h-screen'>
       <div className='flex-1 mb-4'>
         <Navbar />
           <Routes> 

@@ -11,10 +11,10 @@ interface Props {
 
 const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Props) => {
   return (
-    <div className='flex flex-col gap'>
+    <div className='flex flex-col'>
       <form onSubmit={(e)=>handleEdit(e, sched._id)} className="flex flex-col">
         <select
-          className="mb-2 h-6 shadow-inner ml-7"
+          className="mb-2 h-6 shadow-inner ml-7 mt-8"
           id="leader"
           name="leader"
           value={schedData.leader}
@@ -78,7 +78,7 @@ const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Pro
         </select>
 
         <select
-          className="mb-2 h-6 shadow-inner ml-7"
+          className="mb-2 h-6 shadow-inner ml-7 mt-8"
           id="acoustic"
           name="acoustic"
           value={schedData.acoustic}
@@ -160,7 +160,7 @@ const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Pro
             <option value="Jacob">Jacob</option>
         </select>
 
-        <div className="flex gap-4 ml-8">
+        <div className="flex gap-4 ml-8 mt-2">
           <button 
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 focus:outline-none focus:shadow-outline-green"
             type="submit"
