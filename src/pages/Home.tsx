@@ -57,7 +57,7 @@ const Home = () => {
       });
   };
 
-  const handleDeleteSched = (id: string) => {
+  const handleDeleteSched = ( id: string) => {
     axios
       .delete(`${URL}/schedule/${id}`)
       .then(()=>{
@@ -71,14 +71,30 @@ const Home = () => {
 
   }
 
-  const handleEdit = (id: string) => {
-    axios
-      .put(`${URL}/schedule/${id}`, schedData)
-      .catch(error=>{
-        console.log(error)
+  const handleEdit = (event: React.FormEvent<HTMLFormElement>, id: string) => {
+    event.preventDefault();
+    if(
+        schedData.leader !== schedData.backup1 && 
+        schedData.leader !== schedData.backup2 && 
+        schedData.backup1 !== schedData.backup2 &&
+        schedData.leader !== schedData.acoustic && 
+        schedData.backup1 !== schedData.acoustic && 
+        schedData.backup2 !== schedData.acoustic &&
+        schedData.electric !== schedData.bass &&
+        schedData.keyboard !== schedData.drums
+      ){
+      axios
+        .put(`${URL}/schedule/${id}`, schedData)
+        .catch(error=>{
+          console.log(error)
       })
       
       setEdit('')
+
+    } else {
+      alert('You can only assign one person at a time.')
+    }
+    
   }
 
   return (

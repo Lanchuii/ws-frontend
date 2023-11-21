@@ -5,14 +5,14 @@ interface Props {
   sched: SchedItem
   schedData: SchedItem
   setSchedData: React.Dispatch<React.SetStateAction<SchedItem>>
-  handleEdit: (id: string) => void
+  handleEdit: (e: React.FormEvent<HTMLFormElement>, id: string) => void
   setEdit: React.Dispatch<React.SetStateAction<string>>
 }
 
 const EditSchedule = ({sched, schedData, setSchedData, handleEdit, setEdit}: Props) => {
   return (
     <div className='flex flex-col gap'>
-      <form onSubmit={()=>handleEdit(sched._id)} className="flex flex-col">
+      <form onSubmit={(e)=>handleEdit(e, sched._id)} className="flex flex-col">
         <select
           className="mb-2 h-6 shadow-inner ml-7"
           id="leader"

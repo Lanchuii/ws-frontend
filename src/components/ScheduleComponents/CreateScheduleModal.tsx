@@ -29,13 +29,18 @@ const CreateScheduleModal = ({URL, showCreate, setShowCreate, updateScheduleList
 
   const handlePage = (currPage: number) => {
     if(currPage === 1){
-
-      if(schedData.leader !== schedData.backup1 && schedData.leader !== schedData.backup2 && schedData.backup1 !== schedData.backup2){
-        setCurrentPage(currPage+1)
+      if(
+        schedData.leader !== schedData.backup1 && 
+        schedData.leader !== schedData.backup2 && 
+        schedData.backup1 !== schedData.backup2
+        ){
+        setCurrentPage(currPage + 1)
       } else {
-        alert('only one vocalist can be assigned for each')
+        alert('You can only assign one persona at a time.')
       }
-    } else if(currPage === 2) {
+    } 
+    
+    else if(currPage === 2) {
       setCurrentPage(currPage - 1)
     }
   }
@@ -44,14 +49,26 @@ const CreateScheduleModal = ({URL, showCreate, setShowCreate, updateScheduleList
     event.preventDefault();
 
     try { 
-      const response = await axios.post(`${URL}/schedule`, schedData);
+      if(
+        schedData.acoustic !== schedData.backup1 && 
+        schedData.acoustic !== schedData.backup2 && 
+        schedData.acoustic !== schedData.leader &&
+        schedData.electric !== schedData.bass &&
+        schedData.keyboard !== schedData.drums
+      ){
+        const response = await axios.post(`${URL}/schedule`, schedData);
 
-      console.log(response.data); // Handle success
+        console.log(response.data);
 
-      setShowCreate(false)
-      updateScheduleList()
+        setShowCreate(false)
+        updateScheduleList()
+      }
+      else {
+        alert('You can only assign one person at a time')
+      }
+      
     } catch (error) {
-      console.error('Error submitting form:', error); // Handle error
+      console.error('Error submitting form:', error);
     }
   };
 

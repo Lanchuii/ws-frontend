@@ -9,7 +9,7 @@ interface Props {
   schedData: SchedItem
   setSchedData: React.Dispatch<React.SetStateAction<SchedItem>>
   handleDeleteSched: (id: string) => void
-  handleEdit: (id: string) => void
+  handleEdit: (e: React.FormEvent<HTMLFormElement>, id: string) => void
   permission: boolean
 }
 
