@@ -6,7 +6,7 @@ import CreateScheduleModal from '../components/ScheduleComponents/CreateSchedule
 import PermissionModal from '../components/ScheduleComponents/PermissionModal';
 
 const Home = () => {
-  const URL = import.meta.env.VITE_REACT_APP_API_URL
+  const URL = import.meta.env.MODE === "production" ? import.meta.env.VITE_REACT_APP_API_URL : import.meta.env.VITE_REACT_APP_DEV_API_URL 
 
   const [scheds, setScheds] = useState<SchedItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -41,6 +41,7 @@ const Home = () => {
         console.log(error);
         setLoading(false)
       });
+    console.log(URL)
   }, [edit, schedData]);
 
   const updateScheduleList = () => {
