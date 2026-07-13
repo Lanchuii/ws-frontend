@@ -25,7 +25,7 @@ const ScheduleCard = ({sched, edit, setEdit, schedData, setSchedData, handleDele
     setSchedData(sched)
   }
 
-  const formatAndDisplayDate = (dateString: any) => {
+  const formatAndDisplayDate = (dateString: string | Date) => {
     const date = new Date(dateString);
     const formattedDate = date.toLocaleDateString('en-US', {
       year: 'numeric',
