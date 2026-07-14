@@ -2,6 +2,7 @@ import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../models/Worker'
 import { api } from './api';
 
 export interface SaveWorkerPayload {
+  user_id?: string | null;
   name: string;
   roles: WorkerRole[];
   label?: WorkerLabel;

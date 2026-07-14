@@ -11,14 +11,33 @@ import { deleteSchedule, fetchSchedules } from '../services/schedules';
 import { fetchWorkers } from '../services/workers';
 import { formatLongDate, toDateKey } from '../utils/date';
 
-const scheduleColumns = [
-  { label: 'Worship Leader', role: 'Leader' },
-  { label: 'Back Ups', role: 'Backup' },
-  { label: 'Main Acoustic', role: 'Acoustic' },
-  { label: 'Electric', role: 'Electric' },
-  { label: 'Bass', role: 'Bass' },
-  { label: 'Keyboards', role: 'Keyboard' },
-  { label: 'Drums', role: 'Drums' },
+const mainScheduleColumns = [
+  { label: 'Worship Leader', roles: ['Leader'] },
+  { label: 'Back Ups', roles: ['Backup'] },
+  { label: 'Main Acoustic', roles: ['Acoustic'] },
+  { label: 'Electric', roles: ['Electric'] },
+  { label: 'Bass', roles: ['Bass'] },
+  { label: 'Keyboard', roles: ['Keyboard'] },
+  { label: 'Drums', roles: ['Drums'] },
+];
+
+const nonMainScheduleColumns = [
+  { label: 'Worship Leader', roles: ['Leader'] },
+  { label: 'Acoustic', roles: ['Acoustic'] },
+  { label: 'Bass', roles: ['Bass'] },
+  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
+];
+
+const midweekScheduleColumns = [
+  { label: 'Worship Leader', roles: ['Leader'] },
+  { label: 'Acoustic / Keyboard', roles: ['Acoustic', 'Keyboard'] },
+  { label: 'Bass', roles: ['Bass'] },
+  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
+];
+
+const selectedDateColumns = [
+  ...mainScheduleColumns.slice(0, -1),
+  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
 ];
 
 const Calendar = () => {
@@ -294,8 +313,8 @@ const SelectedDateScheduleTable = ({
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase text-slate-600">
             <th className="w-40 px-3 py-3 text-left">Service Type</th>
-            {scheduleColumns.map((column) => (
-              <th key={column.role} className="px-3 py-3 text-left">
+            {selectedDateColumns.map((column) => (
+              <th key={column.label} className="px-3 py-3 text-left">
                 {column.label}
               </th>
             ))}
@@ -318,9 +337,9 @@ const SelectedDateScheduleTable = ({
                     {schedule.status}
                   </p>
                 </td>
-                {scheduleColumns.map((column) => (
-                  <td key={column.role} className="px-3 py-3 font-semibold text-slate-950">
-                    {getWorkersForRole(schedule, column.role) || '-'}
+                {selectedDateColumns.map((column) => (
+                  <td key={column.label} className="px-3 py-3 font-semibold text-slate-950">
+                    {getWorkersForRoles(schedule, column.roles) || '-'}
                   </td>
                 ))}
                 {isAdmin && (
@@ -356,6 +375,12 @@ const MonthlyServiceSummary = ({
   serviceType,
   schedules,
 }: MonthlyServiceSummaryProps) => {
+  const columns = serviceType.value === 'main'
+    ? mainScheduleColumns
+    : serviceType.value === 'midweek'
+      ? midweekScheduleColumns
+      : nonMainScheduleColumns;
+
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
@@ -380,8 +405,8 @@ const MonthlyServiceSummary = ({
                 <thead>
                   <tr className={`border-b border-slate-200 text-xs font-bold uppercase ${serviceType.tableHeaderClassName}`}>
                     <th className="w-36 px-3 py-3 text-left">Date</th>
-                    {scheduleColumns.map((column) => (
-                      <th key={column.role} className="px-3 py-3 text-left">
+                    {columns.map((column) => (
+                      <th key={column.label} className="px-3 py-3 text-left">
                         {column.label}
                       </th>
                     ))}
@@ -394,13 +419,10 @@ const MonthlyServiceSummary = ({
                         <p className="font-bold text-slate-950">
                           {formatScheduleSummaryDate(schedule.date)}
                         </p>
-                        <p className="mt-1 text-xs font-semibold uppercase text-slate-500">
-                          {schedule.status}
-                        </p>
                       </td>
-                      {scheduleColumns.map((column) => (
-                        <td key={column.role} className="px-3 py-3 font-semibold text-slate-950">
-                          {getWorkersForRole(schedule, column.role) || '-'}
+                      {columns.map((column) => (
+                        <td key={column.label} className="px-3 py-3 font-semibold text-slate-950">
+                          {getWorkersForRoles(schedule, column.roles) || '-'}
                         </td>
                       ))}
                     </tr>
@@ -414,22 +436,19 @@ const MonthlyServiceSummary = ({
                 <article key={schedule.id} className="p-4">
                   <div className="mb-3">
                     <p className="font-bold text-slate-950">{formatLongDate(schedule.date)}</p>
-                    <p className="text-xs font-semibold uppercase text-slate-500">
-                      {schedule.status}
-                    </p>
                   </div>
 
                   <div className="space-y-2">
-                    {scheduleColumns.map((column) => (
+                    {columns.map((column) => (
                       <div
-                        key={column.role}
+                        key={column.label}
                         className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-slate-200"
                       >
                         <span className="text-xs font-bold uppercase text-slate-500">
                           {column.label}
                         </span>
                         <span className="text-sm font-semibold text-slate-950">
-                          {getWorkersForRole(schedule, column.role) || '-'}
+                          {getWorkersForRoles(schedule, column.roles) || '-'}
                         </span>
                       </div>
                     ))}
@@ -448,9 +467,11 @@ const MonthlyServiceSummary = ({
   );
 };
 
-const getWorkersForRole = (schedule: WorshipSchedule, role: string) => {
+const getWorkersForRoles = (schedule: WorshipSchedule, roles: string[]) => {
   return schedule.assignments
-    .filter((assignment) => assignment.role.toLowerCase() === role.toLowerCase())
+    .filter((assignment) => {
+      return roles.some((role) => assignment.role.toLowerCase() === role.toLowerCase());
+    })
     .map((assignment) => assignment.workerName)
     .filter(Boolean)
     .join(', ');

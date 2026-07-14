@@ -13,12 +13,18 @@ interface Props {
   onSaved: () => void;
 }
 
-const roles: WorkerRole[] = ['Leader', 'Backup', 'Acoustic', 'Electric', 'Keyboard', 'Bass', 'Drums'];
+const mainRoles: WorkerRole[] = ['Leader', 'Backup', 'Acoustic', 'Electric', 'Keyboard', 'Bass', 'Drums'];
+const nonMainRoles: WorkerRole[] = ['Leader', 'Acoustic', 'Bass'];
+const allWorkerRoles: WorkerRole[] = [...mainRoles, 'Beatbox'];
 const mainRequiredRoles: WorkerRole[] = ['Leader', 'Acoustic', 'Bass', 'Drums'];
-const standardRequiredRoles: WorkerRole[] = ['Leader', 'Acoustic'];
+const nonMainRequiredRoles: WorkerRole[] = ['Leader', 'Acoustic'];
 
 const getRequiredRoles = (serviceType: ServiceTypeValue) =>
-  serviceType === 'main' ? mainRequiredRoles : standardRequiredRoles;
+  serviceType === 'main'
+    ? mainRequiredRoles
+    : serviceType === 'midweek'
+      ? ['Leader']
+      : nonMainRequiredRoles;
 
 const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Props) => {
   const [serviceType, setServiceType] = useState<ServiceTypeValue>(
@@ -36,7 +42,7 @@ const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Prop
   const [submitting, setSubmitting] = useState(false);
 
   const workersByRole = useMemo(() => {
-    return roles.reduce<Record<string, Worker[]>>((acc, role) => {
+    return allWorkerRoles.reduce<Record<string, Worker[]>>((acc, role) => {
       acc[role] = workers.filter((worker) => worker.roles.includes(role));
       return acc;
     }, {});
@@ -46,21 +52,49 @@ const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Prop
     return new Set<WorkerRole>(getRequiredRoles(serviceType));
   }, [serviceType]);
 
+  const visibleRoles = serviceType === 'main'
+    ? mainRoles
+    : serviceType === 'midweek'
+      ? (['Leader', 'Bass'] as WorkerRole[])
+      : nonMainRoles;
+  const midweekInstrumentValue = assignments.Keyboard
+    ? `Keyboard:${assignments.Keyboard}`
+    : assignments.Acoustic
+      ? `Acoustic:${assignments.Acoustic}`
+      : '';
+  const percussionValue = assignments.Beatbox
+    ? `Beatbox:${assignments.Beatbox}`
+    : assignments.Drums
+      ? `Drums:${assignments.Drums}`
+      : '';
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
+
+    const scheduleAssignments = visibleRoles
+      .map((role) => ({
+        role,
+        worker_id: assignments[role],
+      }))
+      .filter((assignment) => Boolean(assignment.worker_id));
+
+    if (serviceType !== 'main' && percussionValue) {
+      const [role, workerId] = percussionValue.split(':') as [WorkerRole, string];
+      scheduleAssignments.push({ role, worker_id: workerId });
+    }
+
+    if (serviceType === 'midweek' && midweekInstrumentValue) {
+      const [role, workerId] = midweekInstrumentValue.split(':') as [WorkerRole, string];
+      scheduleAssignments.push({ role, worker_id: workerId });
+    }
 
     const payload: SaveSchedulePayload = {
       date,
       service_type: serviceType,
       lineup: lineup || undefined,
       notes: notes || undefined,
-      assignments: roles
-        .map((role) => ({
-          role,
-          worker_id: assignments[role],
-        }))
-        .filter((assignment) => Boolean(assignment.worker_id)),
+      assignments: scheduleAssignments,
     };
 
     const missingRequiredRole = getRequiredRoles(serviceType).find(
@@ -69,6 +103,11 @@ const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Prop
 
     if (missingRequiredRole) {
       setError(`${missingRequiredRole} is required.`);
+      return;
+    }
+
+    if (serviceType === 'midweek' && !midweekInstrumentValue) {
+      setError('Acoustic / Keyboard is required.');
       return;
     }
 
@@ -133,7 +172,7 @@ const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Prop
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {roles.map((role) => (
+            {visibleRoles.map((role) => (
               <label key={role} className="block">
                 <span className="text-sm font-semibold text-slate-700">
                   {role}
@@ -155,6 +194,83 @@ const ScheduleEditorModal = ({ date, workers, schedule, onClose, onSaved }: Prop
                 </select>
               </label>
             ))}
+
+            {serviceType === 'midweek' && (
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">
+                  Acoustic / Keyboard <span className="text-red-600">*</span>
+                </span>
+                <select
+                  value={midweekInstrumentValue}
+                  onChange={(event) => {
+                    const nextAssignments = {
+                      ...assignments,
+                      Acoustic: '',
+                      Keyboard: '',
+                    };
+
+                    if (event.target.value) {
+                      const [role, workerId] = event.target.value.split(':') as [
+                        WorkerRole,
+                        string,
+                      ];
+                      nextAssignments[role] = workerId;
+                    }
+
+                    setAssignments(nextAssignments);
+                  }}
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                  required
+                >
+                  <option value="">Unassigned</option>
+                  {(['Acoustic', 'Keyboard'] as WorkerRole[]).flatMap((role) =>
+                    (workersByRole[role] ?? []).map((worker) => (
+                      <option key={`${role}-${worker._id}`} value={`${role}:${worker._id}`}>
+                        {worker.name} ({role})
+                      </option>
+                    )),
+                  )}
+                </select>
+              </label>
+            )}
+
+            {serviceType !== 'main' && (
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">
+                  Drums / Beatbox
+                </span>
+                <select
+                  value={percussionValue}
+                  onChange={(event) => {
+                    const nextAssignments = {
+                      ...assignments,
+                      Drums: '',
+                      Beatbox: '',
+                    };
+
+                    if (event.target.value) {
+                      const [role, workerId] = event.target.value.split(':') as [
+                        WorkerRole,
+                        string,
+                      ];
+                      nextAssignments[role] = workerId;
+                    }
+
+                    setAssignments(nextAssignments);
+                  }}
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                >
+                  <option value="">Unassigned</option>
+                  {(['Drums', 'Beatbox'] as WorkerRole[]).flatMap((role) =>
+                    (workersByRole[role] ?? []).map((worker) => (
+                      <option key={`${role}-${worker._id}`} value={`${role}:${worker._id}`}>
+                        {worker.name} ({role})
+                      </option>
+                    )),
+                  )}
+                </select>
+              </label>
+            )}
           </div>
 
           <label className="block">

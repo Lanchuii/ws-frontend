@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaEdit, FaMusic, FaPlus, FaTimes, FaTrash, FaUsers } from 'react-icons/fa';
 import WorkerEditorModal from '../components/Workers/WorkerEditorModal';
 import { useAuth } from '../context/useAuth';
+import { AuthUser } from '../models/Auth';
 import { Worker, WorkerStatus } from '../models/Worker';
 import { deleteWorker, fetchWorkers } from '../services/workers';
+import { fetchUsers } from '../services/users';
 
 const Workers = () => {
   const { isAuthenticated, isAdmin } = useAuth();
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [users, setUsers] = useState<AuthUser[]>([]);
   const [statusFilter, setStatusFilter] = useState<WorkerStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,11 +30,14 @@ const Workers = () => {
     }
 
     setLoading(true);
-    loadWorkers()
+    Promise.all([
+      loadWorkers(),
+      isAdmin ? fetchUsers().then(setUsers) : Promise.resolve(),
+    ])
       .then(() => setError(''))
       .catch(() => setError('Workers could not be loaded.'))
       .finally(() => setLoading(false));
-  }, [isAuthenticated, loadWorkers]);
+  }, [isAuthenticated, isAdmin, loadWorkers]);
 
   const activeCount = useMemo(
     () => workers.filter((worker) => worker.status === 'active').length,
@@ -140,6 +146,7 @@ const Workers = () => {
                       <th className="px-4 py-3">Roles</th>
                       <th className="px-4 py-3">Label</th>
                       <th className="px-4 py-3">Status</th>
+                      {isAdmin && <th className="px-4 py-3">Member Account</th>}
                       <th className="px-4 py-3">Leader Songs</th>
                       {isAdmin && <th className="px-4 py-3 text-right">Actions</th>}
                     </tr>
@@ -176,6 +183,11 @@ const Workers = () => {
                             {worker.status}
                           </span>
                         </td>
+                        {isAdmin && (
+                          <td className="px-4 py-4 text-slate-600">
+                            {getLinkedAccountLabel(worker.user_id, users)}
+                          </td>
+                        )}
                         <td className="px-4 py-4 text-slate-600">
                           {worker.leader_songs?.length ? (
                             <button
@@ -229,6 +241,11 @@ const Workers = () => {
       {showEditor && isAdmin && (
         <WorkerEditorModal
           worker={editingWorker}
+          users={users.filter((user) => {
+            return !workers.some((worker) => {
+              return worker.user_id === user._id && worker._id !== editingWorker?._id;
+            });
+          })}
           onClose={() => setShowEditor(false)}
           onSaved={loadWorkers}
         />
@@ -239,6 +256,15 @@ const Workers = () => {
       )}
     </main>
   );
+};
+
+const getLinkedAccountLabel = (userId: string | undefined, users: AuthUser[]) => {
+  if (!userId) {
+    return 'Not linked';
+  }
+
+  const user = users.find((item) => item._id === userId);
+  return user?.username || user?.email || 'Linked account';
 };
 
 interface LeaderSongsModalProps {

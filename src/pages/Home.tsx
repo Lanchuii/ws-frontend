@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowRight, FaCalendarAlt, FaClock, FaUsers } from 'react-icons/fa';
+import { FaArrowRight, FaCalendarAlt, FaClock, FaExternalLinkAlt, FaUserCheck, FaUsers } from 'react-icons/fa';
 import UpcomingSchedulePanel from '../components/ScheduleDisplay/UpcomingSchedulePanel';
+import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
-import { fetchSchedules } from '../services/schedules';
+import { fetchMyAssignments, fetchSchedules } from '../services/schedules';
 import { formatLongDate, getComingSunday, isSameDateKey, toDateKey } from '../utils/date';
 
 const Home = () => {
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
+  const [myAssignments, setMyAssignments] = useState<WorshipSchedule[]>([]);
+  const [linkedWorker, setLinkedWorker] = useState<{ id: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const comingSunday = useMemo(() => getComingSunday(), []);
   const comingSundayKey = toDateKey(comingSunday);
 
@@ -22,16 +25,21 @@ const Home = () => {
     }
 
     setLoading(true);
-    fetchSchedules()
-      .then((items) => {
+    Promise.all([
+      fetchSchedules(),
+      isAdmin ? Promise.resolve(null) : fetchMyAssignments(),
+    ])
+      .then(([items, assignmentsResult]) => {
         setSchedules(items);
+        setMyAssignments(assignmentsResult?.items ?? []);
+        setLinkedWorker(assignmentsResult?.worker ?? null);
         setError('');
       })
       .catch(() => {
         setError('Schedules could not be loaded.');
       })
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdmin]);
 
   const upcomingSchedule = schedules.find((schedule) => {
     return isSameDateKey(schedule.date, comingSundayKey);
@@ -41,6 +49,7 @@ const Home = () => {
   const nextSchedules = schedules
     .filter((schedule) => schedule.date >= todayKey)
     .slice(0, 3);
+  const memberAssignments = myAssignments.filter((schedule) => schedule.date >= todayKey);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -63,8 +72,12 @@ const Home = () => {
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <FaUsers className="text-amber-600" />
-            <p className="mt-3 text-sm font-medium text-slate-500">Upcoming Services</p>
-            <p className="mt-1 text-3xl font-bold text-slate-950">{nextSchedules.length}</p>
+            <p className="mt-3 text-sm font-medium text-slate-500">
+              {isAuthenticated && !isAdmin ? 'My Upcoming Services' : 'Upcoming Services'}
+            </p>
+            <p className="mt-1 text-3xl font-bold text-slate-950">
+              {isAuthenticated && !isAdmin ? memberAssignments.length : nextSchedules.length}
+            </p>
           </div>
         </aside>
       </section>
@@ -98,6 +111,12 @@ const Home = () => {
         </div>
       )}
 
+      {isAuthenticated && !isAdmin ? (
+        <MemberAssignmentsPanel
+          schedules={memberAssignments}
+          worker={linkedWorker}
+        />
+      ) : (
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -127,7 +146,89 @@ const Home = () => {
           )}
         </div>
       </section>
+      )}
     </main>
+  );
+};
+
+interface MemberAssignmentsPanelProps {
+  schedules: WorshipSchedule[];
+  worker: { id: string; name: string } | null;
+}
+
+const MemberAssignmentsPanel = ({ schedules, worker }: MemberAssignmentsPanelProps) => {
+  return (
+    <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700">
+            <FaUserCheck />
+          </span>
+          <div>
+            <h2 className="text-xl font-bold text-slate-950">My serving dates</h2>
+            <p className="text-sm text-slate-600">
+              {worker
+                ? `Upcoming assignments for ${worker.name}.`
+                : 'Your upcoming worship team assignments.'}
+            </p>
+          </div>
+        </div>
+        <Link to="/calendar" className="text-sm font-bold text-amber-700 hover:text-amber-800">
+          View calendar
+        </Link>
+      </div>
+
+      {!worker ? (
+        <div className="px-5 py-8 text-center">
+          <p className="font-bold text-slate-950">Your account is not linked to a worker yet.</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Ask an admin to link your member account from the Workers page.
+          </p>
+        </div>
+      ) : schedules.length > 0 ? (
+        <div className="divide-y divide-slate-200">
+          {schedules.map((schedule) => {
+            const serviceType = getServiceTypeOption(schedule.serviceType);
+            const roles = schedule.assignments
+              .filter((assignment) => assignment.workerId === worker.id)
+              .map((assignment) => assignment.role);
+
+            return (
+              <article
+                key={schedule.id}
+                className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(180px,1fr)_minmax(180px,1fr)_auto] sm:items-center"
+              >
+                <div>
+                  <p className="font-bold text-slate-950">{formatLongDate(schedule.date)}</p>
+                  <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ${serviceType.badgeClassName}`}>
+                    {serviceType.label}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase text-slate-500">Serving as</p>
+                  <p className="mt-1 font-semibold text-slate-950">{roles.join(', ') || 'Assigned worker'}</p>
+                </div>
+                {schedule.lineup && /^https?:\/\//i.test(schedule.lineup) && (
+                  <a
+                    href={schedule.lineup}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-amber-700 hover:text-amber-800"
+                  >
+                    Line up
+                    <FaExternalLinkAlt className="text-xs" />
+                  </a>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="px-5 py-8 text-center text-sm text-slate-600">
+          You have no upcoming serving dates.
+        </p>
+      )}
+    </section>
   );
 };
 

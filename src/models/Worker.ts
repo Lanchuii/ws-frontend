@@ -4,6 +4,7 @@ export type WorkerRole =
   | 'Acoustic'
   | 'Bass'
   | 'Drums'
+  | 'Beatbox'
   | 'Keyboard'
   | 'Electric';
 
@@ -12,6 +13,7 @@ export type WorkerLabel = 'main' | 'youth';
 
 export interface Worker {
   _id: string;
+  user_id?: string;
   name: string;
   roles: WorkerRole[];
   label?: WorkerLabel;

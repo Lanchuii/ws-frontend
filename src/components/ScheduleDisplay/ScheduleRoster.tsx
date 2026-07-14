@@ -6,7 +6,16 @@ interface Props {
   highlightLeader?: boolean;
 }
 
-const preferredRoles = ['Leader', 'Backup', 'Acoustic', 'Electric', 'Keyboard', 'Bass', 'Drums'];
+const preferredRoles = [
+  'Leader',
+  'Backup',
+  'Acoustic',
+  'Electric',
+  'Keyboard',
+  'Bass',
+  'Drums',
+  'Beatbox',
+];
 
 const ScheduleRoster = ({ schedule, compact = false, highlightLeader = false }: Props) => {
   const assignments = [...schedule.assignments].sort((a, b) => {

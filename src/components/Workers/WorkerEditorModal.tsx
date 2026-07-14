@@ -1,10 +1,12 @@
 import { FormEvent, useState } from 'react';
 import { FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
+import { AuthUser } from '../../models/Auth';
 import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../../models/Worker';
 import { createWorker, SaveWorkerPayload, updateWorker } from '../../services/workers';
 
 interface Props {
   worker?: Worker;
+  users: AuthUser[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -15,12 +17,14 @@ const workerRoles: WorkerRole[] = [
   'Acoustic',
   'Bass',
   'Drums',
+  'Beatbox',
   'Keyboard',
   'Electric',
 ];
 
-const WorkerEditorModal = ({ worker, onClose, onSaved }: Props) => {
+const WorkerEditorModal = ({ worker, users, onClose, onSaved }: Props) => {
   const [name, setName] = useState(worker?.name ?? '');
+  const [userId, setUserId] = useState(worker?.user_id ?? '');
   const [label, setLabel] = useState<WorkerLabel>(worker?.label ?? 'main');
   const [status, setStatus] = useState<WorkerStatus>(worker?.status ?? 'active');
   const [roles, setRoles] = useState<WorkerRole[]>(worker?.roles ?? []);
@@ -54,6 +58,7 @@ const WorkerEditorModal = ({ worker, onClose, onSaved }: Props) => {
     }
 
     const payload: SaveWorkerPayload = {
+      user_id: userId || null,
       name: name.trim(),
       roles,
       label,
@@ -110,7 +115,7 @@ const WorkerEditorModal = ({ worker, onClose, onSaved }: Props) => {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="text-sm font-semibold text-slate-700">Name</span>
               <input
@@ -119,6 +124,24 @@ const WorkerEditorModal = ({ worker, onClose, onSaved }: Props) => {
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                 required
               />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">Member account</span>
+              <select
+                value={userId}
+                onChange={(event) => setUserId(event.target.value)}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+              >
+                <option value="">Not linked</option>
+                {users
+                  .filter((user) => user.role === 'member')
+                  .map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.username ? `${user.username} (${user.email})` : user.email}
+                    </option>
+                  ))}
+              </select>
             </label>
 
             <label className="block">
