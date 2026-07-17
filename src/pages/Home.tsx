@@ -1,17 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaArrowRight, FaCalendarAlt, FaClock, FaExternalLinkAlt, FaUserCheck, FaUsers } from 'react-icons/fa';
+import {
+  FaArrowRight,
+  FaCalendarAlt,
+  FaClock,
+  FaEdit,
+  FaExternalLinkAlt,
+  FaMusic,
+  FaUserCheck,
+  FaUsers,
+} from 'react-icons/fa';
+import LineupEditorModal from '../components/ScheduleDisplay/LineupEditorModal';
 import UpcomingSchedulePanel from '../components/ScheduleDisplay/UpcomingSchedulePanel';
+import LeaderSongsEditorModal from '../components/Workers/LeaderSongsEditorModal';
 import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
+import { LeaderSong, WorkerRole } from '../models/Worker';
 import { fetchMyAssignments, fetchSchedules } from '../services/schedules';
 import { formatLongDate, getComingSunday, isSameDateKey, toDateKey } from '../utils/date';
 
 const Home = () => {
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
   const [myAssignments, setMyAssignments] = useState<WorshipSchedule[]>([]);
-  const [linkedWorker, setLinkedWorker] = useState<{ id: string; name: string } | null>(null);
+  const [linkedWorker, setLinkedWorker] = useState<LinkedWorker | null>(null);
+  const [showSongEditor, setShowSongEditor] = useState(false);
+  const [lineupSchedule, setLineupSchedule] = useState<WorshipSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isAuthenticated, isAdmin } = useAuth();
@@ -50,6 +64,19 @@ const Home = () => {
     .filter((schedule) => schedule.date >= todayKey)
     .slice(0, 3);
   const memberAssignments = myAssignments.filter((schedule) => schedule.date >= todayKey);
+
+  const handleSongsSaved = (leaderSongs: LeaderSong[]) => {
+    setLinkedWorker((worker) => worker ? { ...worker, leaderSongs } : worker);
+  };
+
+  const handleLineupSaved = (updatedSchedule: WorshipSchedule) => {
+    const replaceSchedule = (schedule: WorshipSchedule) => {
+      return schedule.id === updatedSchedule.id ? updatedSchedule : schedule;
+    };
+
+    setSchedules((items) => items.map(replaceSchedule));
+    setMyAssignments((items) => items.map(replaceSchedule));
+  };
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -115,6 +142,8 @@ const Home = () => {
         <MemberAssignmentsPanel
           schedules={memberAssignments}
           worker={linkedWorker}
+          onEditSongs={() => setShowSongEditor(true)}
+          onEditLineup={setLineupSchedule}
         />
       ) : (
       <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -147,16 +176,48 @@ const Home = () => {
         </div>
       </section>
       )}
+
+      {showSongEditor && linkedWorker && (
+        <LeaderSongsEditorModal
+          songs={linkedWorker.leaderSongs}
+          onClose={() => setShowSongEditor(false)}
+          onSaved={handleSongsSaved}
+        />
+      )}
+
+      {lineupSchedule && (
+        <LineupEditorModal
+          schedule={lineupSchedule}
+          onClose={() => setLineupSchedule(null)}
+          onSaved={handleLineupSaved}
+        />
+      )}
     </main>
   );
 };
 
-interface MemberAssignmentsPanelProps {
-  schedules: WorshipSchedule[];
-  worker: { id: string; name: string } | null;
+interface LinkedWorker {
+  id: string;
+  name: string;
+  roles: WorkerRole[];
+  leaderSongs: LeaderSong[];
 }
 
-const MemberAssignmentsPanel = ({ schedules, worker }: MemberAssignmentsPanelProps) => {
+interface MemberAssignmentsPanelProps {
+  schedules: WorshipSchedule[];
+  worker: LinkedWorker | null;
+  onEditSongs: () => void;
+  onEditLineup: (schedule: WorshipSchedule) => void;
+}
+
+const MemberAssignmentsPanel = ({
+  schedules,
+  worker,
+  onEditSongs,
+  onEditLineup,
+}: MemberAssignmentsPanelProps) => {
+  const isLeader = worker?.roles.includes('Leader');
+
   return (
     <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -173,9 +234,24 @@ const MemberAssignmentsPanel = ({ schedules, worker }: MemberAssignmentsPanelPro
             </p>
           </div>
         </div>
-        <Link to="/calendar" className="text-sm font-bold text-amber-700 hover:text-amber-800">
-          View calendar
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {isLeader && (
+            <button
+              type="button"
+              onClick={onEditSongs}
+              className="inline-flex items-center gap-2 rounded-md border border-amber-300 px-3 py-2 text-sm font-bold text-amber-800 hover:bg-amber-50"
+            >
+              <FaMusic />
+              Edit songs
+            </button>
+          )}
+          <Link
+            to="/calendar"
+            className="rounded-md px-3 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+          >
+            View calendar
+          </Link>
+        </div>
       </div>
 
       {!worker ? (
@@ -192,6 +268,7 @@ const MemberAssignmentsPanel = ({ schedules, worker }: MemberAssignmentsPanelPro
             const roles = schedule.assignments
               .filter((assignment) => assignment.workerId === worker.id)
               .map((assignment) => assignment.role);
+            const isAssignedLeader = roles.includes('Leader');
 
             return (
               <article
@@ -208,17 +285,33 @@ const MemberAssignmentsPanel = ({ schedules, worker }: MemberAssignmentsPanelPro
                   <p className="text-xs font-bold uppercase text-slate-500">Serving as</p>
                   <p className="mt-1 font-semibold text-slate-950">{roles.join(', ') || 'Assigned worker'}</p>
                 </div>
-                {schedule.lineup && /^https?:\/\//i.test(schedule.lineup) && (
-                  <a
-                    href={schedule.lineup}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-amber-700 hover:text-amber-800"
-                  >
-                    Line up
-                    <FaExternalLinkAlt className="text-xs" />
-                  </a>
-                )}
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  {schedule.lineup && /^https?:\/\//i.test(schedule.lineup) ? (
+                    <a
+                      href={schedule.lineup}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-bold text-amber-700 hover:text-amber-800"
+                    >
+                      Line up
+                      <FaExternalLinkAlt className="text-xs" />
+                    </a>
+                  ) : schedule.lineup ? (
+                    <span className="text-sm font-semibold text-slate-700">
+                      {schedule.lineup}
+                    </span>
+                  ) : null}
+                  {isAssignedLeader && (
+                    <button
+                      type="button"
+                      onClick={() => onEditLineup(schedule)}
+                      className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <FaEdit />
+                      {schedule.lineup ? 'Edit lineup' : 'Add lineup'}
+                    </button>
+                  )}
+                </div>
               </article>
             );
           })}

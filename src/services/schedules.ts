@@ -1,5 +1,6 @@
 import { ScheduleAssignment, ScheduleSong, WorshipSchedule } from '../models/Schedule';
 import { ServiceTypeValue, serviceTypes } from '../constants/serviceTypes';
+import { LeaderSong, WorkerRole } from '../models/Worker';
 import { api, getApiBaseUrl } from './api';
 
 const roleLabels = [
@@ -75,6 +76,8 @@ export interface MyAssignmentsResult {
   worker: {
     id: string;
     name: string;
+    roles: WorkerRole[];
+    leaderSongs: LeaderSong[];
   } | null;
   items: WorshipSchedule[];
 }
@@ -99,10 +102,20 @@ export const fetchMyAssignments = async (): Promise<MyAssignmentsResult> => {
       ? {
           id: getString(worker, '_id') ?? '',
           name: getString(worker, 'name') ?? '',
+          roles: normalizeWorkerRoles(getArray(worker, 'roles')),
+          leaderSongs: normalizeLeaderSongs(getArray(worker, 'leader_songs')),
         }
       : null,
     items: normalizeScheduleResponse(data?.items ?? []),
   };
+};
+
+export const updateScheduleLineup = async (
+  id: string,
+  lineup: string,
+): Promise<WorshipSchedule> => {
+  const response = await api.patch(`/schedules/${id}/lineup`, { lineup });
+  return normalizeRequiredSchedule(response.data.data);
 };
 
 export const fetchScheduleById = async (id: string): Promise<WorshipSchedule> => {
@@ -265,6 +278,33 @@ const normalizeSongs = (songs?: unknown[]): ScheduleSong[] => {
       };
     })
     .filter((song): song is ScheduleSong => Boolean(song));
+};
+
+const normalizeWorkerRoles = (roles?: unknown[]): WorkerRole[] => {
+  const validRoles: WorkerRole[] = [
+    'Leader',
+    'Backup',
+    'Acoustic',
+    'Bass',
+    'Drums',
+    'Beatbox',
+    'Keyboard',
+    'Electric',
+  ];
+
+  return (roles ?? []).filter(
+    (role): role is WorkerRole => typeof role === 'string' && validRoles.includes(role as WorkerRole),
+  );
+};
+
+const normalizeLeaderSongs = (songs?: unknown[]): LeaderSong[] => {
+  return (songs ?? [])
+    .filter(isRecord)
+    .map((song) => ({
+      title: getString(song, 'title') ?? '',
+      key: getString(song, 'key') ?? '',
+    }))
+    .filter((song) => song.title && song.key);
 };
 
 const toDateInputValue = (value: string | Date) => {

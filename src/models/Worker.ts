@@ -11,6 +11,11 @@ export type WorkerRole =
 export type WorkerStatus = 'active' | 'inactive';
 export type WorkerLabel = 'main' | 'youth';
 
+export interface LeaderSong {
+  title: string;
+  key: string;
+}
+
 export interface Worker {
   _id: string;
   user_id?: string;
@@ -18,8 +23,5 @@ export interface Worker {
   roles: WorkerRole[];
   label?: WorkerLabel;
   status: WorkerStatus;
-  leader_songs?: Array<{
-    title: string;
-    key: string;
-  }>;
+  leader_songs?: LeaderSong[];
 }

@@ -1,4 +1,4 @@
-import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../models/Worker';
+import { LeaderSong, Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../models/Worker';
 import { api } from './api';
 
 export interface SaveWorkerPayload {
@@ -32,6 +32,15 @@ export const updateWorker = async (
   payload: SaveWorkerPayload,
 ): Promise<Worker> => {
   const response = await api.patch(`/workers/${id}`, payload);
+  return response.data.data;
+};
+
+export const updateMyLeaderSongs = async (
+  leaderSongs: LeaderSong[],
+): Promise<Worker> => {
+  const response = await api.patch('/workers/me/leader-songs', {
+    leader_songs: leaderSongs,
+  });
   return response.data.data;
 };
 
