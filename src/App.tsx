@@ -5,6 +5,8 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Leaders from './pages/Leaders'
 import Workers from './pages/Workers'
+import Users from './pages/Users'
+import Services from './pages/Services'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 
@@ -20,6 +22,8 @@ function App() {
             <Route path='/login' element={<Login />} />
             <Route path='/signup' element={<Signup />} />
             <Route path='/workers' element={<Workers />} />
+            <Route path='/users' element={<Users />} />
+            <Route path='/services' element={<Services />} />
             <Route path='/Leaders' element={<Leaders />} />
           </Routes>
       </div>

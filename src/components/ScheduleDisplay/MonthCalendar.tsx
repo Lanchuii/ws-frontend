@@ -1,5 +1,5 @@
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { getServiceTypeOption } from '../../constants/serviceTypes';
+import { findServiceTypeOption, ServiceTypeOption } from '../../constants/serviceTypes';
 import { WorshipSchedule } from '../../models/Schedule';
 import { formatMonthLabel, getMonthDays, toDateKey } from '../../utils/date';
 
@@ -11,6 +11,7 @@ interface Props {
   onToday: () => void;
   selectedDateKey?: string;
   onSelectDate: (dateKey: string) => void;
+  serviceTypes: ServiceTypeOption[];
 }
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -23,6 +24,7 @@ const MonthCalendar = ({
   onToday,
   selectedDateKey,
   onSelectDate,
+  serviceTypes,
 }: Props) => {
   const days = getMonthDays(monthDate);
   const schedulesByDate = schedules.reduce<Record<string, WorshipSchedule[]>>((acc, schedule) => {
@@ -108,11 +110,11 @@ const MonthCalendar = ({
                     {daySchedules.slice(0, 2).map((schedule) => (
                       <div
                         key={schedule.id}
-                        className={`rounded-md px-2 py-1 text-xs font-semibold ${getServiceTypeOption(schedule.serviceType).badgeClassName}`}
-                        title={getScheduleCalendarLabel(schedule)}
+                        className={`rounded-md px-2 py-1 text-xs font-semibold ${findServiceTypeOption(schedule.serviceType, serviceTypes).badgeClassName}`}
+                        title={getScheduleCalendarLabel(schedule, serviceTypes)}
                       >
                         <span className="block truncate">
-                          {getScheduleCalendarLabel(schedule)}
+                          {getScheduleCalendarLabel(schedule, serviceTypes)}
                         </span>
                       </div>
                     ))}
@@ -132,8 +134,11 @@ const MonthCalendar = ({
   );
 };
 
-const getScheduleCalendarLabel = (schedule: WorshipSchedule) => {
-  const serviceLabel = getServiceTypeOption(schedule.serviceType).label;
+const getScheduleCalendarLabel = (
+  schedule: WorshipSchedule,
+  serviceTypes: ServiceTypeOption[],
+) => {
+  const serviceLabel = findServiceTypeOption(schedule.serviceType, serviceTypes).label;
   const leader = schedule.assignments.find((assignment) => {
     return assignment.role.toLowerCase() === 'leader';
   });

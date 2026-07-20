@@ -1,4 +1,4 @@
-import { AuthSession } from '../models/Auth';
+import { AuthSession, SignupResult } from '../models/Auth';
 import { api } from './api';
 
 export interface LoginPayload {
@@ -17,7 +17,7 @@ export const login = async (payload: LoginPayload): Promise<AuthSession> => {
   return response.data.data;
 };
 
-export const signup = async (payload: SignupPayload): Promise<AuthSession> => {
+export const signup = async (payload: SignupPayload): Promise<SignupResult> => {
   const response = await api.post('/auth/signup', payload);
   return response.data.data;
 };

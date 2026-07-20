@@ -6,6 +6,7 @@ export interface SaveWorkerPayload {
   name: string;
   roles: WorkerRole[];
   label?: WorkerLabel;
+  worker_group_ids?: string[];
   status?: WorkerStatus;
   leader_songs?: Array<{
     title: string;

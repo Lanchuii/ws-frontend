@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { FormEvent, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FaLock } from 'react-icons/fa';
@@ -20,7 +21,21 @@ const Login = () => {
     try {
       await login(form);
       navigate(redirectTo, { replace: true });
-    } catch {
+    } catch (requestError) {
+      if (axios.isAxiosError<{ message?: string }>(requestError)) {
+        const message = requestError.response?.data?.message;
+
+        if (message === 'Account is pending verification') {
+          setError('Your account is awaiting super-admin approval.');
+          return;
+        }
+
+        if (message === 'Account is inactive') {
+          setError('Your account is inactive. Contact a super admin.');
+          return;
+        }
+      }
+
       setError('Invalid email/username or password.');
     } finally {
       setSubmitting(false);

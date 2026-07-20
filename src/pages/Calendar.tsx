@@ -1,52 +1,41 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FaEdit } from 'react-icons/fa';
 import AutoGenerateScheduleModal from '../components/ScheduleDisplay/AutoGenerateScheduleModal';
+import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedulesModal';
 import MonthCalendar from '../components/ScheduleDisplay/MonthCalendar';
 import ScheduleEditorModal from '../components/ScheduleDisplay/ScheduleEditorModal';
 import ScheduleRoster from '../components/ScheduleDisplay/ScheduleRoster';
-import { ServiceTypeOption, getServiceTypeOption, serviceTypes } from '../constants/serviceTypes';
+import {
+  ServiceTypeOption,
+  findServiceTypeOption,
+  toServiceTypeOptions,
+} from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
 import { Worker } from '../models/Worker';
 import { deleteSchedule, fetchSchedules } from '../services/schedules';
 import { fetchWorkers } from '../services/workers';
+import {
+  ServiceTypeConfiguration,
+  WorkerGroup,
+} from '../models/ServiceConfiguration';
+import {
+  fetchServiceTypes,
+  fetchWorkerGroups,
+} from '../services/serviceConfiguration';
+import { getAssignmentForSlot } from '../utils/serviceRules';
 import { formatLongDate, toDateKey } from '../utils/date';
-
-const mainScheduleColumns = [
-  { label: 'Worship Leader', roles: ['Leader'] },
-  { label: 'Back Ups', roles: ['Backup'] },
-  { label: 'Main Acoustic', roles: ['Acoustic'] },
-  { label: 'Electric', roles: ['Electric'] },
-  { label: 'Bass', roles: ['Bass'] },
-  { label: 'Keyboard', roles: ['Keyboard'] },
-  { label: 'Drums', roles: ['Drums'] },
-];
-
-const nonMainScheduleColumns = [
-  { label: 'Worship Leader', roles: ['Leader'] },
-  { label: 'Acoustic', roles: ['Acoustic'] },
-  { label: 'Bass', roles: ['Bass'] },
-  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
-];
-
-const midweekScheduleColumns = [
-  { label: 'Worship Leader', roles: ['Leader'] },
-  { label: 'Acoustic / Keyboard', roles: ['Acoustic', 'Keyboard'] },
-  { label: 'Bass', roles: ['Bass'] },
-  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
-];
-
-const selectedDateColumns = [
-  ...mainScheduleColumns.slice(0, -1),
-  { label: 'Drums / Beatbox', roles: ['Drums', 'Beatbox'] },
-];
 
 const Calendar = () => {
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [serviceTypeConfigs, setServiceTypeConfigs] = useState<ServiceTypeConfiguration[]>([]);
+  const [workerGroups, setWorkerGroups] = useState<WorkerGroup[]>([]);
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
   const [showEditor, setShowEditor] = useState(false);
   const [showAutoGenerator, setShowAutoGenerator] = useState(false);
+  const [bulkEditingServiceType, setBulkEditingServiceType] = useState<ServiceTypeConfiguration>();
   const [editingSchedule, setEditingSchedule] = useState<WorshipSchedule | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,14 +53,25 @@ const Calendar = () => {
     }
 
     setLoading(true);
-    Promise.all([loadSchedules(), isAdmin ? fetchWorkers('active') : Promise.resolve([])])
-      .then(([, activeWorkers]) => {
+    Promise.all([
+      loadSchedules(),
+      isAdmin ? fetchWorkers('active') : Promise.resolve([]),
+      fetchServiceTypes(),
+      fetchWorkerGroups(),
+    ])
+      .then(([, activeWorkers, configuredServiceTypes, configuredWorkerGroups]) => {
         setWorkers(activeWorkers);
+        setServiceTypeConfigs(configuredServiceTypes);
+        setWorkerGroups(configuredWorkerGroups);
         setError('');
       })
       .catch(() => setError('Schedules could not be loaded.'))
       .finally(() => setLoading(false));
   }, [isAuthenticated, isAdmin]);
+  const serviceTypeOptions = useMemo(
+    () => toServiceTypeOptions(serviceTypeConfigs),
+    [serviceTypeConfigs],
+  );
 
   const selectedMonthSchedules = useMemo(() => {
     return schedules.filter((schedule) => {
@@ -91,7 +91,7 @@ const Calendar = () => {
   };
 
   const handleDeleteSchedule = async (schedule: WorshipSchedule) => {
-    const serviceLabel = getServiceTypeOption(schedule.serviceType).label;
+    const serviceLabel = findServiceTypeOption(schedule.serviceType, serviceTypeOptions).label;
     const confirmed = window.confirm(`Delete the ${serviceLabel} schedule for ${selectedDateKey}?`);
 
     if (!confirmed) {
@@ -168,6 +168,7 @@ const Calendar = () => {
           onToday={() => setMonthDate(new Date())}
           selectedDateKey={selectedDateKey}
           onSelectDate={setSelectedDateKey}
+          serviceTypes={serviceTypeOptions}
         />
       )}
 
@@ -197,11 +198,13 @@ const Calendar = () => {
                 isAdmin={isAdmin}
                 onEdit={openEditSchedule}
                 onDelete={handleDeleteSchedule}
+                serviceTypes={serviceTypeConfigs}
+                serviceTypeOptions={serviceTypeOptions}
               />
 
               <div className="divide-y divide-slate-200 md:hidden">
                 {selectedDateSchedules.map((schedule) => {
-                  const serviceType = getServiceTypeOption(schedule.serviceType);
+                  const serviceType = findServiceTypeOption(schedule.serviceType, serviceTypeOptions);
 
                   return (
                     <article key={schedule.id} className="py-4 first:pt-0 last:pb-0">
@@ -237,7 +240,13 @@ const Calendar = () => {
                         )}
                       </div>
 
-                      <ScheduleRoster schedule={schedule} compact />
+                      <ScheduleRoster
+                        schedule={schedule}
+                        compact
+                        serviceType={serviceTypeConfigs.find(
+                          (item) => item.code === schedule.serviceType,
+                        )}
+                      />
                     </article>
                   );
                 })}
@@ -250,15 +259,29 @@ const Calendar = () => {
       </section>
 
       <section className="mt-6 grid gap-6">
-        {serviceTypes.map((serviceType) => (
+        {serviceTypeConfigs
+          .filter(
+            (serviceType) =>
+              serviceType.is_active ||
+              selectedMonthSchedules.some(
+                (schedule) => schedule.serviceType === serviceType.code,
+              ),
+          )
+          .map((serviceType) => {
+          const option = findServiceTypeOption(serviceType.code, serviceTypeOptions);
+          return (
           <MonthlyServiceSummary
-            key={serviceType.value}
+            key={serviceType._id}
             serviceType={serviceType}
+            option={option}
             schedules={selectedMonthSchedules.filter((schedule) => {
-              return schedule.serviceType === serviceType.value;
+              return schedule.serviceType === serviceType.code;
             })}
+            isAdmin={isAdmin}
+            onBulkEdit={() => setBulkEditingServiceType(serviceType)}
           />
-        ))}
+          );
+        })}
       </section>
 
       {todaySchedule && (
@@ -269,8 +292,10 @@ const Calendar = () => {
 
       {showEditor && isAdmin && (
         <ScheduleEditorModal
-          date={selectedDateKey}
+          date={editingSchedule?.date ?? selectedDateKey}
           workers={workers}
+          serviceTypes={serviceTypeConfigs}
+          workerGroups={workerGroups}
           schedule={editingSchedule}
           onClose={() => setShowEditor(false)}
           onSaved={loadSchedules}
@@ -281,8 +306,24 @@ const Calendar = () => {
         <AutoGenerateScheduleModal
           monthDate={monthDate}
           workers={workers}
+          serviceTypes={serviceTypeConfigs}
+          workerGroups={workerGroups}
           onClose={() => setShowAutoGenerator(false)}
           onConfirmed={loadSchedules}
+        />
+      )}
+
+      {bulkEditingServiceType && isAdmin && (
+        <BulkEditSchedulesModal
+          monthDate={monthDate}
+          serviceType={bulkEditingServiceType}
+          schedules={selectedMonthSchedules.filter((schedule) => {
+            return schedule.serviceType === bulkEditingServiceType.code;
+          })}
+          workers={workers}
+          workerGroups={workerGroups}
+          onClose={() => setBulkEditingServiceType(undefined)}
+          onSaved={loadSchedules}
         />
       )}
     </main>
@@ -290,8 +331,11 @@ const Calendar = () => {
 };
 
 interface MonthlyServiceSummaryProps {
-  serviceType: ServiceTypeOption;
+  serviceType: ServiceTypeConfiguration;
+  option: ServiceTypeOption;
   schedules: WorshipSchedule[];
+  isAdmin: boolean;
+  onBulkEdit: () => void;
 }
 
 interface SelectedDateScheduleTableProps {
@@ -299,6 +343,8 @@ interface SelectedDateScheduleTableProps {
   isAdmin: boolean;
   onEdit: (schedule: WorshipSchedule) => void;
   onDelete: (schedule: WorshipSchedule) => void;
+  serviceTypes: ServiceTypeConfiguration[];
+  serviceTypeOptions: ServiceTypeOption[];
 }
 
 const SelectedDateScheduleTable = ({
@@ -306,6 +352,8 @@ const SelectedDateScheduleTable = ({
   isAdmin,
   onEdit,
   onDelete,
+  serviceTypes,
+  serviceTypeOptions,
 }: SelectedDateScheduleTableProps) => {
   return (
     <div className="hidden overflow-x-auto md:block">
@@ -313,35 +361,48 @@ const SelectedDateScheduleTable = ({
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase text-slate-600">
             <th className="w-40 px-3 py-3 text-left">Service Type</th>
-            {selectedDateColumns.map((column) => (
-              <th key={column.label} className="px-3 py-3 text-left">
-                {column.label}
-              </th>
-            ))}
+            <th className="px-3 py-3 text-left">Worker assignments</th>
             {isAdmin && <th className="w-48 px-3 py-3 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
           {schedules.map((schedule) => {
-            const serviceType = getServiceTypeOption(schedule.serviceType);
+            const option = findServiceTypeOption(schedule.serviceType, serviceTypeOptions);
+            const serviceType = serviceTypes.find((item) => item.code === schedule.serviceType);
+            const slots = [...(serviceType?.assignment_slots ?? [])].sort(
+              (a, b) => a.display_order - b.display_order,
+            );
+            const usedIndexes = new Set<number>();
 
             return (
               <tr key={schedule.id} className="align-top">
                 <td className="px-3 py-3">
                   <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${serviceType.badgeClassName}`}
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${option.badgeClassName}`}
                   >
-                    {serviceType.label}
+                    {option.label}
                   </span>
                   <p className="mt-2 text-xs font-semibold uppercase text-slate-500">
                     {schedule.status}
                   </p>
                 </td>
-                {selectedDateColumns.map((column) => (
-                  <td key={column.label} className="px-3 py-3 font-semibold text-slate-950">
-                    {getWorkersForRoles(schedule, column.roles) || '-'}
-                  </td>
-                ))}
+                <td className="px-3 py-3">
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {slots.map((slot) => {
+                      const assignment = getAssignmentForSlot(
+                        schedule.assignments,
+                        slot,
+                        usedIndexes,
+                      );
+                      return (
+                        <div key={slot.key} className="border-l-2 border-slate-200 pl-2">
+                          <p className="text-xs font-bold uppercase text-slate-500">{slot.label}</p>
+                          <p className="font-semibold text-slate-950">{assignment?.workerName || '-'}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
                 {isAdmin && (
                   <td className="px-3 py-3">
                     <div className="flex justify-end gap-2">
@@ -373,27 +434,41 @@ const SelectedDateScheduleTable = ({
 
 const MonthlyServiceSummary = ({
   serviceType,
+  option,
   schedules,
+  isAdmin,
+  onBulkEdit,
 }: MonthlyServiceSummaryProps) => {
-  const columns = serviceType.value === 'main'
-    ? mainScheduleColumns
-    : serviceType.value === 'midweek'
-      ? midweekScheduleColumns
-      : nonMainScheduleColumns;
+  const columns = [...serviceType.assignment_slots].sort(
+    (a, b) => a.display_order - b.display_order,
+  );
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-xl font-bold text-slate-950">{serviceType.summaryTitle}</h2>
+            <h2 className="text-xl font-bold text-slate-950">{option.summaryTitle}</h2>
             <p className="mt-1 text-sm text-slate-600">
               Workers listed by schedule date.
             </p>
           </div>
-          <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
-            {schedules.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+              {schedules.length}
+            </span>
+            {isAdmin && schedules.length > 0 && (
+              <button
+                type="button"
+                onClick={onBulkEdit}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                aria-label={`Bulk edit ${option.label} schedules`}
+              >
+                <FaEdit aria-hidden="true" />
+                Edit month
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -403,36 +478,48 @@ const MonthlyServiceSummary = ({
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full table-fixed border-collapse text-sm">
                 <thead>
-                  <tr className={`border-b border-slate-200 text-xs font-bold uppercase ${serviceType.tableHeaderClassName}`}>
+                  <tr className={`border-b border-slate-200 text-xs font-bold uppercase ${option.tableHeaderClassName}`}>
                     <th className="w-36 px-3 py-3 text-left">Date</th>
                     {columns.map((column) => (
-                      <th key={column.label} className="px-3 py-3 text-left">
+                      <th key={column.key} className="px-3 py-3 text-left">
                         {column.label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {schedules.map((schedule) => (
+                  {schedules.map((schedule) => {
+                    const usedIndexes = new Set<number>();
+                    return (
                     <tr key={schedule.id} className="align-top">
                       <td className="px-3 py-3">
                         <p className="font-bold text-slate-950">
                           {formatScheduleSummaryDate(schedule.date)}
                         </p>
                       </td>
-                      {columns.map((column) => (
-                        <td key={column.label} className="px-3 py-3 font-semibold text-slate-950">
-                          {getWorkersForRoles(schedule, column.roles) || '-'}
-                        </td>
-                      ))}
+                      {columns.map((column) => {
+                        const assignment = getAssignmentForSlot(
+                          schedule.assignments,
+                          column,
+                          usedIndexes,
+                        );
+                        return (
+                          <td key={column.key} className="px-3 py-3 font-semibold text-slate-950">
+                            {assignment?.workerName || '-'}
+                          </td>
+                        );
+                      })}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="divide-y divide-slate-200 md:hidden">
-              {schedules.map((schedule) => (
+              {schedules.map((schedule) => {
+                const usedIndexes = new Set<number>();
+                return (
                 <article key={schedule.id} className="p-4">
                   <div className="mb-3">
                     <p className="font-bold text-slate-950">{formatLongDate(schedule.date)}</p>
@@ -441,40 +528,31 @@ const MonthlyServiceSummary = ({
                   <div className="space-y-2">
                     {columns.map((column) => (
                       <div
-                        key={column.label}
+                        key={column.key}
                         className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 ring-1 ring-slate-200"
                       >
                         <span className="text-xs font-bold uppercase text-slate-500">
                           {column.label}
                         </span>
                         <span className="text-sm font-semibold text-slate-950">
-                          {getWorkersForRoles(schedule, column.roles) || '-'}
+                          {getAssignmentForSlot(schedule.assignments, column, usedIndexes)?.workerName || '-'}
                         </span>
                       </div>
                     ))}
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
           </>
         ) : (
           <p className="p-4 text-sm text-slate-600">
-            No {serviceType.label.toLowerCase()} schedules are saved for this month.
+            No {option.label.toLowerCase()} schedules are saved for this month.
           </p>
         )}
       </div>
     </section>
   );
-};
-
-const getWorkersForRoles = (schedule: WorshipSchedule, roles: string[]) => {
-  return schedule.assignments
-    .filter((assignment) => {
-      return roles.some((role) => assignment.role.toLowerCase() === role.toLowerCase());
-    })
-    .map((assignment) => assignment.workerName)
-    .filter(Boolean)
-    .join(', ');
 };
 
 const formatScheduleSummaryDate = (dateValue: string) => {

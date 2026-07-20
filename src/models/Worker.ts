@@ -22,6 +22,7 @@ export interface Worker {
   name: string;
   roles: WorkerRole[];
   label?: WorkerLabel;
+  worker_group_ids?: string[];
   status: WorkerStatus;
   leader_songs?: LeaderSong[];
 }

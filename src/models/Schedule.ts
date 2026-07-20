@@ -1,6 +1,7 @@
 import { ServiceTypeValue } from '../constants/serviceTypes';
 
 export interface ScheduleAssignment {
+  slotKey?: string;
   role: string;
   workerId?: string;
   workerName: string;

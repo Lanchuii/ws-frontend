@@ -1,10 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { FaCalendarAlt, FaHome, FaSignInAlt, FaSignOutAlt, FaUserPlus, FaUsers } from 'react-icons/fa';
+import {
+  FaCalendarAlt,
+  FaHome,
+  FaSignInAlt,
+  FaSignOutAlt,
+  FaUserPlus,
+  FaUsers,
+  FaUserShield,
+  FaSlidersH,
+} from 'react-icons/fa';
 import guitarIcon from '../../assets/guitar-svgrepo-com.svg';
 import { useAuth } from '../../context/useAuth';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition ${
       isActive
@@ -36,10 +45,22 @@ const Navbar = () => {
             <FaUsers />
             Workers
           </NavLink>
+          {isAdmin && (
+            <NavLink to="/services" className={linkClass}>
+              <FaSlidersH />
+              Services
+            </NavLink>
+          )}
+          {isSuperAdmin && (
+            <NavLink to="/users" className={linkClass}>
+              <FaUserShield />
+              Users
+            </NavLink>
+          )}
           {isAuthenticated ? (
             <>
               <span className="inline-flex items-center rounded-md bg-amber-50 px-3 py-2 text-sm font-bold capitalize text-amber-700">
-                {user?.role}
+                {formatRole(user?.role)}
               </span>
               <button
                 type="button"
@@ -66,6 +87,14 @@ const Navbar = () => {
       </div>
     </nav>
   );
+};
+
+const formatRole = (role?: string) => {
+  if (role === 'super_admin') {
+    return 'Super admin';
+  }
+
+  return role ?? '';
 };
 
 export default Navbar;

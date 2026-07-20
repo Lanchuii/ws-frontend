@@ -5,12 +5,15 @@ import { useAuth } from '../context/useAuth';
 import { AuthUser } from '../models/Auth';
 import { Worker, WorkerStatus } from '../models/Worker';
 import { deleteWorker, fetchWorkers } from '../services/workers';
-import { fetchUsers } from '../services/users';
+import { fetchLinkableUsers } from '../services/users';
+import { WorkerGroup } from '../models/ServiceConfiguration';
+import { fetchWorkerGroups } from '../services/serviceConfiguration';
 
 const Workers = () => {
   const { isAuthenticated, isAdmin } = useAuth();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [users, setUsers] = useState<AuthUser[]>([]);
+  const [groups, setGroups] = useState<WorkerGroup[]>([]);
   const [statusFilter, setStatusFilter] = useState<WorkerStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,7 +35,8 @@ const Workers = () => {
     setLoading(true);
     Promise.all([
       loadWorkers(),
-      isAdmin ? fetchUsers().then(setUsers) : Promise.resolve(),
+      isAdmin ? fetchLinkableUsers().then(setUsers) : Promise.resolve(),
+      fetchWorkerGroups().then(setGroups),
     ])
       .then(() => setError(''))
       .catch(() => setError('Workers could not be loaded.'))
@@ -144,7 +148,7 @@ const Workers = () => {
                     <tr>
                       <th className="px-4 py-3">Name</th>
                       <th className="px-4 py-3">Roles</th>
-                      <th className="px-4 py-3">Label</th>
+                      <th className="px-4 py-3">Groups</th>
                       <th className="px-4 py-3">Status</th>
                       {isAdmin && <th className="px-4 py-3">Member Account</th>}
                       <th className="px-4 py-3">Leader Songs</th>
@@ -168,15 +172,13 @@ const Workers = () => {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${
-                              worker.label === 'youth'
-                                ? 'bg-sky-50 text-sky-700'
-                                : 'bg-emerald-50 text-emerald-700'
-                            }`}
-                          >
-                            {worker.label ?? 'main'}
-                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {getWorkerGroups(worker, groups).map((group) => (
+                              <span key={group._id} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase text-emerald-700">
+                                {group.name}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-4 py-4">
                           <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-700">
@@ -246,6 +248,7 @@ const Workers = () => {
               return worker.user_id === user._id && worker._id !== editingWorker?._id;
             });
           })}
+          groups={groups}
           onClose={() => setShowEditor(false)}
           onSaved={loadWorkers}
         />
@@ -330,3 +333,13 @@ const LeaderSongsModal = ({ worker, onClose }: LeaderSongsModalProps) => {
 };
 
 export default Workers;
+
+const getWorkerGroups = (worker: Worker, groups: WorkerGroup[]) => {
+  const ids = worker.worker_group_ids?.length
+    ? worker.worker_group_ids
+    : groups
+        .filter((group) => group.code === (worker.label === 'youth' ? 'youth' : 'main'))
+        .map((group) => group._id);
+
+  return groups.filter((group) => ids.includes(group._id));
+};

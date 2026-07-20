@@ -1,9 +1,11 @@
 import { WorshipSchedule } from '../../models/Schedule';
+import { ServiceTypeConfiguration } from '../../models/ServiceConfiguration';
 
 interface Props {
   schedule: WorshipSchedule;
   compact?: boolean;
   highlightLeader?: boolean;
+  serviceType?: ServiceTypeConfiguration;
 }
 
 const preferredRoles = [
@@ -17,8 +19,22 @@ const preferredRoles = [
   'Beatbox',
 ];
 
-const ScheduleRoster = ({ schedule, compact = false, highlightLeader = false }: Props) => {
+const ScheduleRoster = ({ schedule, compact = false, highlightLeader = false, serviceType }: Props) => {
   const assignments = [...schedule.assignments].sort((a, b) => {
+    if (serviceType) {
+      const aIndex = serviceType.assignment_slots.findIndex(
+        (slot) => slot.key === a.slotKey,
+      );
+      const bIndex = serviceType.assignment_slots.findIndex(
+        (slot) => slot.key === b.slotKey,
+      );
+
+      if (aIndex >= 0 || bIndex >= 0) {
+        return (aIndex < 0 ? Number.MAX_SAFE_INTEGER : aIndex) -
+          (bIndex < 0 ? Number.MAX_SAFE_INTEGER : bIndex);
+      }
+    }
+
     return preferredRoles.indexOf(a.role) - preferredRoles.indexOf(b.role);
   });
 
@@ -34,7 +50,7 @@ const ScheduleRoster = ({ schedule, compact = false, highlightLeader = false }: 
           }
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {assignment.role}
+            {serviceType?.assignment_slots.find((slot) => slot.key === assignment.slotKey)?.label ?? assignment.role}
           </p>
           <p
             className={

@@ -3,10 +3,12 @@ import { FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
 import { AuthUser } from '../../models/Auth';
 import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../../models/Worker';
 import { createWorker, SaveWorkerPayload, updateWorker } from '../../services/workers';
+import { WorkerGroup } from '../../models/ServiceConfiguration';
 
 interface Props {
   worker?: Worker;
   users: AuthUser[];
+  groups: WorkerGroup[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -22,12 +24,19 @@ const workerRoles: WorkerRole[] = [
   'Electric',
 ];
 
-const WorkerEditorModal = ({ worker, users, onClose, onSaved }: Props) => {
+const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) => {
   const [name, setName] = useState(worker?.name ?? '');
   const [userId, setUserId] = useState(worker?.user_id ?? '');
   const [label, setLabel] = useState<WorkerLabel>(worker?.label ?? 'main');
   const [status, setStatus] = useState<WorkerStatus>(worker?.status ?? 'active');
   const [roles, setRoles] = useState<WorkerRole[]>(worker?.roles ?? []);
+  const [workerGroupIds, setWorkerGroupIds] = useState<string[]>(
+    worker?.worker_group_ids?.length
+      ? worker.worker_group_ids
+      : groups
+          .filter((group) => group.code === (worker?.label === 'youth' ? 'youth' : 'main'))
+          .map((group) => group._id),
+  );
   const [leaderSongs, setLeaderSongs] = useState(
     worker?.leader_songs?.length ? worker.leader_songs : [{ title: '', key: '' }],
   );
@@ -57,11 +66,17 @@ const WorkerEditorModal = ({ worker, users, onClose, onSaved }: Props) => {
       return;
     }
 
+    if (!workerGroupIds.length) {
+      setError('Select at least one worker group.');
+      return;
+    }
+
     const payload: SaveWorkerPayload = {
       user_id: userId || null,
       name: name.trim(),
       roles,
       label,
+      worker_group_ids: workerGroupIds,
       status,
       leader_songs: isLeader
         ? leaderSongs.filter((song) => song.title.trim() && song.key.trim())
@@ -145,18 +160,6 @@ const WorkerEditorModal = ({ worker, users, onClose, onSaved }: Props) => {
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Label</span>
-              <select
-                value={label}
-                onChange={(event) => setLabel(event.target.value as WorkerLabel)}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-              >
-                <option value="main">Main</option>
-                <option value="youth">Youth</option>
-              </select>
-            </label>
-
-            <label className="block">
               <span className="text-sm font-semibold text-slate-700">Status</span>
               <select
                 value={status}
@@ -167,6 +170,35 @@ const WorkerEditorModal = ({ worker, users, onClose, onSaved }: Props) => {
                 <option value="inactive">Inactive</option>
               </select>
             </label>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Worker groups</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {groups.filter((group) => group.is_active || workerGroupIds.includes(group._id)).map((group) => (
+                <label
+                  key={group._id}
+                  className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700"
+                >
+                  <input
+                    type="checkbox"
+                    checked={workerGroupIds.includes(group._id)}
+                    onChange={() => {
+                      setWorkerGroupIds((current) =>
+                        current.includes(group._id)
+                          ? current.filter((id) => id !== group._id)
+                          : [...current, group._id],
+                      );
+                      if (group.code === 'main' || group.code === 'youth') {
+                        setLabel(group.code as WorkerLabel);
+                      }
+                    }}
+                    className="h-4 w-4 accent-amber-600"
+                  />
+                  {group.name}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div>

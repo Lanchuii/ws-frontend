@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'member';
+export type UserRole = 'super_admin' | 'admin' | 'member';
 
 export interface AuthUser {
   _id: string;
@@ -6,10 +6,16 @@ export interface AuthUser {
   username?: string;
   role: UserRole;
   is_active: boolean;
+  is_verified: boolean;
 }
 
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
   user: AuthUser;
+}
+
+export interface SignupResult {
+  user: AuthUser;
+  verificationRequired: boolean;
 }
