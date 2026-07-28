@@ -16,7 +16,7 @@ import LeaderSongsEditorModal from '../components/Workers/LeaderSongsEditorModal
 import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
-import { LeaderSong, WorkerRole } from '../models/Worker';
+import { WorkerRole } from '../models/Worker';
 import { fetchMyAssignments, fetchSchedules } from '../services/schedules';
 import { formatLongDate, getComingSunday, isSameDateKey, toDateKey } from '../utils/date';
 
@@ -64,10 +64,6 @@ const Home = () => {
     .filter((schedule) => schedule.date >= todayKey)
     .slice(0, 3);
   const memberAssignments = myAssignments.filter((schedule) => schedule.date >= todayKey);
-
-  const handleSongsSaved = (leaderSongs: LeaderSong[]) => {
-    setLinkedWorker((worker) => worker ? { ...worker, leaderSongs } : worker);
-  };
 
   const handleLineupSaved = (updatedSchedule: WorshipSchedule) => {
     const replaceSchedule = (schedule: WorshipSchedule) => {
@@ -179,9 +175,7 @@ const Home = () => {
 
       {showSongEditor && linkedWorker && (
         <LeaderSongsEditorModal
-          songs={linkedWorker.leaderSongs}
           onClose={() => setShowSongEditor(false)}
-          onSaved={handleSongsSaved}
         />
       )}
 
@@ -200,7 +194,6 @@ interface LinkedWorker {
   id: string;
   name: string;
   roles: WorkerRole[];
-  leaderSongs: LeaderSong[];
 }
 
 interface MemberAssignmentsPanelProps {

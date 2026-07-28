@@ -1,6 +1,6 @@
 import { ScheduleAssignment, ScheduleSong, WorshipSchedule } from '../models/Schedule';
 import { ServiceTypeValue } from '../constants/serviceTypes';
-import { LeaderSong, WorkerRole } from '../models/Worker';
+import { WorkerRole } from '../models/Worker';
 import { api, getApiBaseUrl } from './api';
 
 const roleLabels = [
@@ -80,7 +80,6 @@ export interface MyAssignmentsResult {
     id: string;
     name: string;
     roles: WorkerRole[];
-    leaderSongs: LeaderSong[];
   } | null;
   items: WorshipSchedule[];
 }
@@ -106,7 +105,6 @@ export const fetchMyAssignments = async (): Promise<MyAssignmentsResult> => {
           id: getString(worker, '_id') ?? '',
           name: getString(worker, 'name') ?? '',
           roles: normalizeWorkerRoles(getArray(worker, 'roles')),
-          leaderSongs: normalizeLeaderSongs(getArray(worker, 'leader_songs')),
         }
       : null,
     items: normalizeScheduleResponse(data?.items ?? []),
@@ -294,16 +292,6 @@ const normalizeWorkerRoles = (roles?: unknown[]): WorkerRole[] => {
   return (roles ?? []).filter(
     (role): role is WorkerRole => typeof role === 'string' && validRoles.includes(role as WorkerRole),
   );
-};
-
-const normalizeLeaderSongs = (songs?: unknown[]): LeaderSong[] => {
-  return (songs ?? [])
-    .filter(isRecord)
-    .map((song) => ({
-      title: getString(song, 'title') ?? '',
-      key: getString(song, 'key') ?? '',
-    }))
-    .filter((song) => song.title && song.key);
 };
 
 const toDateInputValue = (value: string | Date) => {

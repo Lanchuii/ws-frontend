@@ -25,4 +25,5 @@ export interface Worker {
   worker_group_ids?: string[];
   status: WorkerStatus;
   leader_songs?: LeaderSong[];
+  leader_song_count?: number;
 }

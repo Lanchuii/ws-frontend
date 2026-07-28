@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
+import { FaTimes } from 'react-icons/fa';
 import { AuthUser } from '../../models/Auth';
 import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../../models/Worker';
 import { createWorker, SaveWorkerPayload, updateWorker } from '../../services/workers';
@@ -37,12 +37,8 @@ const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) =
           .filter((group) => group.code === (worker?.label === 'youth' ? 'youth' : 'main'))
           .map((group) => group._id),
   );
-  const [leaderSongs, setLeaderSongs] = useState(
-    worker?.leader_songs?.length ? worker.leader_songs : [{ title: '', key: '' }],
-  );
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const isLeader = roles.includes('Leader');
 
   const toggleRole = (role: WorkerRole) => {
     setRoles((current) =>
@@ -78,9 +74,6 @@ const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) =
       label,
       worker_group_ids: workerGroupIds,
       status,
-      leader_songs: isLeader
-        ? leaderSongs.filter((song) => song.title.trim() && song.key.trim())
-        : [],
     };
 
     setSubmitting(true);
@@ -220,60 +213,6 @@ const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) =
               ))}
             </div>
           </div>
-
-          {isLeader && (
-            <div className="rounded-md bg-slate-50 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-800">Leader songs</p>
-                  <p className="text-xs text-slate-500">Optional songs and keys for this leader.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setLeaderSongs([...leaderSongs, { title: '', key: '' }])}
-                  className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-white"
-                >
-                  <FaPlus />
-                  Add
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-2">
-                {leaderSongs.map((song, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_120px_40px]">
-                    <input
-                      value={song.title}
-                      onChange={(event) => {
-                        const nextSongs = [...leaderSongs];
-                        nextSongs[index] = { ...song, title: event.target.value };
-                        setLeaderSongs(nextSongs);
-                      }}
-                      placeholder="Song title"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                    />
-                    <input
-                      value={song.key}
-                      onChange={(event) => {
-                        const nextSongs = [...leaderSongs];
-                        nextSongs[index] = { ...song, key: event.target.value };
-                        setLeaderSongs(nextSongs);
-                      }}
-                      placeholder="Key"
-                      className="rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setLeaderSongs(leaderSongs.filter((_, itemIndex) => itemIndex !== index))}
-                      className="inline-flex h-10 items-center justify-center rounded-md text-red-600 hover:bg-red-50"
-                      aria-label="Remove song"
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="flex justify-end gap-3">
             <button

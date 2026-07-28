@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FaEdit, FaMusic, FaPlus, FaTimes, FaTrash, FaUsers } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaTrash, FaUsers } from 'react-icons/fa';
 import WorkerEditorModal from '../components/Workers/WorkerEditorModal';
+import LeaderSongsViewerModal from '../components/Workers/LeaderSongsViewerModal';
 import { useAuth } from '../context/useAuth';
 import { AuthUser } from '../models/Auth';
 import { Worker, WorkerStatus } from '../models/Worker';
@@ -191,17 +192,17 @@ const Workers = () => {
                           </td>
                         )}
                         <td className="px-4 py-4 text-slate-600">
-                          {worker.leader_songs?.length ? (
+                          {worker.roles.includes('Leader') ? (
                             <button
                               type="button"
                               onClick={() => setSongWorker(worker)}
                               className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-200"
                               aria-label={`View ${worker.name}'s leader songs`}
                             >
-                              {worker.leader_songs.length}
+                              {worker.leader_song_count ?? worker.leader_songs?.length ?? 0}
                             </button>
                           ) : (
-                            <span>0</span>
+                            <span>-</span>
                           )}
                         </td>
                         {isAdmin && (
@@ -255,7 +256,11 @@ const Workers = () => {
       )}
 
       {songWorker && (
-        <LeaderSongsModal worker={songWorker} onClose={() => setSongWorker(undefined)} />
+        <LeaderSongsViewerModal
+          worker={songWorker}
+          onClose={() => setSongWorker(undefined)}
+          onChanged={() => void loadWorkers()}
+        />
       )}
     </main>
   );
@@ -268,68 +273,6 @@ const getLinkedAccountLabel = (userId: string | undefined, users: AuthUser[]) =>
 
   const user = users.find((item) => item._id === userId);
   return user?.username || user?.email || 'Linked account';
-};
-
-interface LeaderSongsModalProps {
-  worker: Worker;
-  onClose: () => void;
-}
-
-const LeaderSongsModal = ({ worker, onClose }: LeaderSongsModalProps) => {
-  const songs = worker.leader_songs ?? [];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-          <div>
-            <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-amber-700">
-              <FaMusic />
-              Leader songs
-            </p>
-            <h2 className="mt-1 text-xl font-bold text-slate-950">{worker.name}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-950"
-            aria-label="Close leader songs"
-          >
-            <FaTimes />
-          </button>
-        </div>
-
-        <div className="p-5">
-          {songs.length > 0 ? (
-            <div className="overflow-hidden rounded-md border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Song</th>
-                    <th className="w-28 px-4 py-3">Key</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {songs.map((song, index) => (
-                    <tr key={`${song.title}-${song.key}-${index}`}>
-                      <td className="px-4 py-3 font-semibold text-slate-950">
-                        {song.title}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-amber-700">
-                        {song.key || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-600">No leader songs saved for this worker.</p>
-          )}
-        </div>
-      </section>
-    </div>
-  );
 };
 
 export default Workers;
