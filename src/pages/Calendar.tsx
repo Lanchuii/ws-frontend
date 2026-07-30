@@ -5,6 +5,7 @@ import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedu
 import MonthCalendar from '../components/ScheduleDisplay/MonthCalendar';
 import ScheduleEditorModal from '../components/ScheduleDisplay/ScheduleEditorModal';
 import ScheduleRoster from '../components/ScheduleDisplay/ScheduleRoster';
+import MonthlyWorkerAssignments from '../components/ScheduleDisplay/MonthlyWorkerAssignments';
 import {
   ServiceTypeOption,
   findServiceTypeOption,
@@ -168,6 +169,14 @@ const Calendar = () => {
           onToday={() => setMonthDate(new Date())}
           selectedDateKey={selectedDateKey}
           onSelectDate={setSelectedDateKey}
+          serviceTypes={serviceTypeOptions}
+        />
+      )}
+
+      {isAdmin && !loading && (
+        <MonthlyWorkerAssignments
+          monthDate={monthDate}
+          schedules={selectedMonthSchedules}
           serviceTypes={serviceTypeOptions}
         />
       )}
@@ -447,12 +456,7 @@ const MonthlyServiceSummary = ({
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold text-slate-950">{option.summaryTitle}</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Workers listed by schedule date.
-            </p>
-          </div>
+          <h2 className="text-xl font-bold text-slate-950">{option.label}</h2>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
               {schedules.length}
