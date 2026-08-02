@@ -8,6 +8,7 @@ import {
   FaUsers,
   FaUserShield,
   FaSlidersH,
+  FaExchangeAlt,
 } from 'react-icons/fa';
 import guitarIcon from '../../assets/guitar-svgrepo-com.svg';
 import { useAuth } from '../../context/useAuth';
@@ -45,6 +46,12 @@ const Navbar = () => {
             <FaUsers />
             Workers
           </NavLink>
+          {isAuthenticated && (
+            <NavLink to="/requests" className={linkClass}>
+              <FaExchangeAlt />
+              Requests
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/services" className={linkClass}>
               <FaSlidersH />

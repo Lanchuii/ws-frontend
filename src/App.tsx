@@ -9,6 +9,7 @@ import Users from './pages/Users'
 import Services from './pages/Services'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import Requests from './pages/Requests'
 
 function App() {
 
@@ -24,6 +25,7 @@ function App() {
             <Route path='/workers' element={<Workers />} />
             <Route path='/users' element={<Users />} />
             <Route path='/services' element={<Services />} />
+            <Route path='/requests' element={<Requests />} />
             <Route path='/Leaders' element={<Leaders />} />
           </Routes>
       </div>

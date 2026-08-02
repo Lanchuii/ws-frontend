@@ -6,6 +6,7 @@ import {
   FaClock,
   FaEdit,
   FaExternalLinkAlt,
+  FaExchangeAlt,
   FaMusic,
   FaUserCheck,
   FaUsers,
@@ -228,6 +229,13 @@ const MemberAssignmentsPanel = ({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/requests?action=unavailable"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <FaCalendarAlt />
+            Mark unavailable
+          </Link>
           {isLeader && (
             <button
               type="button"
@@ -258,9 +266,10 @@ const MemberAssignmentsPanel = ({
         <div className="divide-y divide-slate-200">
           {schedules.map((schedule) => {
             const serviceType = getServiceTypeOption(schedule.serviceType);
-            const roles = schedule.assignments
-              .filter((assignment) => assignment.workerId === worker.id)
-              .map((assignment) => assignment.role);
+            const assignedEntries = schedule.assignments.filter(
+              (assignment) => assignment.workerId === worker.id,
+            );
+            const roles = assignedEntries.map((assignment) => assignment.role);
             const isAssignedLeader = roles.includes('Leader');
 
             return (
@@ -279,6 +288,13 @@ const MemberAssignmentsPanel = ({
                   <p className="mt-1 font-semibold text-slate-950">{roles.join(', ') || 'Assigned worker'}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <Link
+                    to={`/requests?sourceScheduleId=${encodeURIComponent(schedule.id)}${assignedEntries.length === 1 && assignedEntries[0].slotKey ? `&sourceSlotKey=${encodeURIComponent(assignedEntries[0].slotKey)}` : ''}`}
+                    className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                  >
+                    <FaExchangeAlt />
+                    Request swap
+                  </Link>
                   {schedule.lineup && /^https?:\/\//i.test(schedule.lineup) ? (
                     <a
                       href={schedule.lineup}
