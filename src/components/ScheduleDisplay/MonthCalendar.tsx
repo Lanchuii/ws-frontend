@@ -88,15 +88,15 @@ const MonthCalendar = ({
               disabled={!day}
               onClick={() => day && onSelectDate(dateKey)}
               aria-label={day ? getCalendarDayLabel(day, daySchedules, serviceTypes) : undefined}
-              className={`flex aspect-square flex-col items-center border-b border-r border-slate-200 p-1 text-center sm:block sm:aspect-auto sm:min-h-[116px] sm:p-2 sm:text-left ${
+              className={`flex aspect-square flex-col items-start border-b border-r border-slate-200 p-1 text-left sm:block sm:aspect-auto sm:min-h-[116px] sm:p-2 ${
                 day ? 'bg-white' : 'bg-slate-50'
               } ${dateKey === selectedDateKey ? 'sm:ring-2 sm:ring-inset sm:ring-amber-500' : ''}`}
             >
               {day && (
                 <>
-                  <div className="flex items-center justify-between">
+                  <div className="flex w-full items-center justify-between">
                     <span
-                      className={`mx-auto inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold sm:mx-0 sm:h-7 sm:w-7 sm:rounded-md sm:text-sm ${
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold sm:h-7 sm:w-7 sm:rounded-md sm:text-sm ${
                         dateKey === selectedDateKey || isToday
                           ? 'bg-amber-500 text-white'
                           : isSunday
@@ -108,7 +108,7 @@ const MonthCalendar = ({
                     </span>
                   </div>
 
-                  <div className="mt-auto flex justify-center -space-x-1 sm:hidden">
+                  <div className="mt-auto flex justify-start -space-x-1 sm:hidden">
                     {daySchedules
                       .slice(0, daySchedules.length > 3 ? 2 : 3)
                       .map((schedule) => {
@@ -120,7 +120,7 @@ const MonthCalendar = ({
                         return (
                           <span
                             key={schedule.id}
-                            className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-black ${serviceType.badgeClassName}`}
+                            className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black ${serviceType.badgeClassName}`}
                             title={getScheduleCalendarLabel(schedule, serviceTypes)}
                           >
                             {getServiceInitial(serviceType)}
@@ -128,7 +128,7 @@ const MonthCalendar = ({
                         );
                       })}
                     {daySchedules.length > 3 && (
-                      <span className="inline-flex h-4 min-w-5 items-center justify-center rounded bg-slate-200 px-1 text-[8px] font-bold text-slate-600 ring-1 ring-white">
+                      <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-0.5 text-[8px] font-bold text-slate-600 ring-1 ring-white">
                         +{daySchedules.length - 2}
                       </span>
                     )}
