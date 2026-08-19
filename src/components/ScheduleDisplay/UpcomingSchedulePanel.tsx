@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FaArrowRight, FaCalendarDay, FaExternalLinkAlt, FaMusic } from 'react-icons/fa';
+import { FaArrowRight, FaCalendarDay, FaEdit, FaExternalLinkAlt, FaMusic } from 'react-icons/fa';
 import { WorshipSchedule } from '../../models/Schedule';
 import { formatLongDate } from '../../utils/date';
 import ScheduleRoster from './ScheduleRoster';
@@ -8,9 +8,11 @@ interface Props {
   schedule?: WorshipSchedule;
   targetDate: Date;
   loading: boolean;
+  canManageLineup?: boolean;
+  onManageLineup?: (schedule: WorshipSchedule) => void;
 }
 
-const UpcomingSchedulePanel = ({ schedule, targetDate, loading }: Props) => {
+const UpcomingSchedulePanel = ({ schedule, targetDate, loading, canManageLineup, onManageLineup }: Props) => {
   if (loading) {
     return (
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
@@ -88,6 +90,11 @@ const UpcomingSchedulePanel = ({ schedule, targetDate, loading }: Props) => {
           <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase text-amber-700 ring-1 ring-amber-200">
             {schedule.status}
           </span>
+          {canManageLineup && onManageLineup && (
+            <button type="button" onClick={() => onManageLineup(schedule)} className="mt-3 inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white sm:mt-0">
+              <FaEdit /> {schedule.songs.length || schedule.lineup ? 'Edit lineup' : 'Add lineup'}
+            </button>
+          )}
         </div>
         <ScheduleRoster schedule={schedule} highlightLeader />
 
@@ -126,7 +133,7 @@ const UpcomingSchedulePanel = ({ schedule, targetDate, loading }: Props) => {
                   key={`${song.title}-${index}`}
                   className="rounded-full bg-white px-3 py-1 text-sm font-medium text-slate-700 ring-1 ring-slate-200"
                 >
-                  {song.title}{song.key ? ` (${song.key})` : ''}
+                  {song.title}{song.artist ? ` — ${song.artist}` : ''}{song.key ? ` (${song.key})` : ''}
                 </span>
               ))}
             </div>

@@ -4,6 +4,7 @@ import {
   FaCalendarAlt,
   FaCheckDouble,
   FaExchangeAlt,
+  FaMusic,
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import { InboxNotification } from '../../models/Notification'
@@ -182,6 +183,8 @@ const NotificationInbox = () => {
                     <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-amber-700">
                       {notification.type === 'schedule_reminder' ? (
                         <FaCalendarAlt />
+                      ) : notification.type.startsWith('lineup_') ? (
+                        <FaMusic />
                       ) : (
                         <FaExchangeAlt />
                       )}

@@ -3,6 +3,11 @@ export type NotificationType =
   | 'request_created'
   | 'request_approved'
   | 'request_denied'
+  | 'swap_action_required'
+  | 'swap_accepted'
+  | 'swap_declined'
+  | 'lineup_posted'
+  | 'lineup_updated'
 
 export interface InboxNotification {
   _id: string

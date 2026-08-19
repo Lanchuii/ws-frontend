@@ -30,6 +30,7 @@ import {
   fetchWorkerRequests,
   fetchWorkerUnavailability,
   rejectWorkerRequest,
+  respondToSwapRequest,
   removeWorkerUnavailability,
 } from '../services/workerRequests';
 import { fetchWorkers } from '../services/workers';
@@ -146,7 +147,7 @@ const Requests = () => {
                 initialSlotKey={searchParams.get('sourceSlotKey') ?? ''}
                 onCreated={async () => {
                   await loadData();
-                  setSuccess('Swap request submitted for review.');
+                  setSuccess('Swap request sent to the selected worker.');
                 }}
               />
               <UnavailableRequestForm
@@ -166,9 +167,45 @@ const Requests = () => {
           )}
 
           {worker && (
+            <TargetResponsePanel
+              requests={myRequests.filter((request) =>
+                request.type === 'swap' &&
+                request.target_user_id === user?._id &&
+                request.status === 'pending' &&
+                (request.target_response ?? 'pending') === 'pending'
+              )}
+              busyId={busyId}
+              onRespond={(request, decision, note) => runAction(
+                request._id,
+                () => respondToSwapRequest(request._id, decision, note),
+                decision === 'accept'
+                  ? 'Swap accepted and sent for admin review.'
+                  : 'Swap declined.',
+              )}
+            />
+          )}
+
+          {worker && (
             <RequestList
-              title="My request history"
+              title="Submitted by me"
               icon={<FaHistory />}
+              requests={myRequests.filter((request) =>
+                request.requester_user_id === user?._id
+              )}
+              currentUserId={user?._id ?? ''}
+              busyId={busyId}
+              onCancel={(request) => runAction(
+                request._id,
+                () => cancelWorkerRequest(request._id),
+                'Request cancelled.',
+              )}
+            />
+          )}
+
+          {worker && (
+            <RequestList
+              title="All activity involving me"
+              icon={<FaExchangeAlt />}
               requests={myRequests}
               currentUserId={user?._id ?? ''}
               busyId={busyId}
@@ -435,6 +472,55 @@ const RequestList = ({ title, icon, requests, currentUserId, busyId, onCancel }:
   </section>
 );
 
+const TargetResponsePanel = ({ requests, busyId, onRespond }: {
+  requests: WorkerRequest[];
+  busyId: string;
+  onRespond: (
+    request: WorkerRequest,
+    decision: 'accept' | 'decline',
+    note?: string,
+  ) => void;
+}) => {
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  return (
+    <section className="mt-6 overflow-hidden rounded-lg border border-amber-200 bg-white shadow-sm">
+      <div className="border-b border-amber-100 bg-amber-50 px-5 py-4">
+        <p className="text-xs font-bold uppercase text-amber-700">Action required</p>
+        <h2 className="text-xl font-bold text-slate-950">Needs your response</h2>
+      </div>
+      {requests.length ? (
+        <div className="divide-y divide-slate-200">
+          {requests.map((request) => (
+            <article key={request._id} className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_280px] lg:items-center">
+              <div>
+                <RequestDescription request={request} />
+                <p className="mt-2 text-sm font-semibold text-amber-700">
+                  Requested by {request.requester_worker_name}
+                </p>
+              </div>
+              <div>
+                <input
+                  value={notes[request._id] ?? ''}
+                  onChange={(event) => setNotes((current) => ({
+                    ...current,
+                    [request._id]: event.target.value,
+                  }))}
+                  placeholder="Response note (optional)"
+                  className={inputClass}
+                />
+                <div className="mt-2 flex justify-end gap-2">
+                  <button type="button" disabled={busyId === request._id} onClick={() => onRespond(request, 'decline', notes[request._id])} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"><FaTimes /> Decline</button>
+                  <button type="button" disabled={busyId === request._id} onClick={() => onRespond(request, 'accept', notes[request._id])} className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><FaCheck /> Accept</button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : <p className="px-5 py-6 text-sm text-slate-600">No swaps are waiting for your response.</p>}
+    </section>
+  );
+};
+
 const AdminReviewPanel = ({ requests, status, busyId, onStatusChange, onApprove, onReject }: {
   requests: WorkerRequest[];
   status: WorkerRequestStatus | '';
@@ -466,10 +552,13 @@ const AdminReviewPanel = ({ requests, status, busyId, onStatusChange, onApprove,
           <RequestDescription request={request} />
           <div>
             <input value={notes[request._id] ?? ''} onChange={(event) => setNotes((items) => ({ ...items, [request._id]: event.target.value }))} placeholder="Review note (optional)" className={inputClass} />
-            {request.status === 'pending' && <div className="mt-2 flex justify-end gap-2">
+            {(request.status === 'pending' && request.type !== 'swap') ||
+            (request.status === 'pending' && request.target_response === 'accepted') ? <div className="mt-2 flex justify-end gap-2">
               <button type="button" disabled={busyId === request._id} onClick={() => onReject(request, notes[request._id])} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"><FaTimes /> Reject</button>
               <button type="button" disabled={busyId === request._id} onClick={() => onApprove(request, notes[request._id])} className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><FaCheck /> Approve</button>
-            </div>}
+            </div> : request.status === 'pending' && request.type === 'swap' ? (
+              <p className="mt-2 text-right text-xs font-bold uppercase text-amber-700">Awaiting target consent</p>
+            ) : null}
           </div>
         </article>
       ))}</div> : <p className="px-5 py-8 text-sm text-slate-600">No requests match this filter.</p>}
@@ -505,6 +594,11 @@ const RequestDescription = ({ request }: { request: WorkerRequest }) => {
   return <div>
     <p className="font-bold text-slate-950">{source ? `${formatLongDate(source.schedule_date)} - ${source.service_type} - ${source.role}` : 'Schedule swap'}</p>
     <p className="mt-1 text-sm text-slate-600">{request.swap_mode === 'exchange' && request.target_assignment ? `Exchange with ${request.target_assignment.worker_name} on ${formatLongDate(request.target_assignment.schedule_date)}` : `Replacement: ${request.target_worker_name ?? '-'}`}</p>
+    {request.target_response && (
+      <p className="mt-1 text-xs font-bold uppercase text-slate-500">
+        Target response: {request.target_response}
+      </p>
+    )}
     <RequestNotes request={request} />
   </div>;
 };

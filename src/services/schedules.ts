@@ -113,9 +113,17 @@ export const fetchMyAssignments = async (): Promise<MyAssignmentsResult> => {
 
 export const updateScheduleLineup = async (
   id: string,
-  lineup: string,
+  payload: {
+    songs: Array<{
+      song_id?: string;
+      title?: string;
+      artist?: string;
+      key?: string;
+    }>;
+    spotify_url?: string;
+  },
 ): Promise<WorshipSchedule> => {
-  const response = await api.patch(`/schedules/${id}/lineup`, { lineup });
+  const response = await api.patch(`/schedules/${id}/lineup`, payload);
   return normalizeRequiredSchedule(response.data.data);
 };
 
@@ -270,7 +278,9 @@ const normalizeSongs = (songs?: unknown[]): ScheduleSong[] => {
       }
 
       return {
+        songId: getString(song, 'song_id') ?? getString(song, 'songId'),
         title,
+        artist: getString(song, 'artist'),
         key: getString(song, 'key'),
       };
     })

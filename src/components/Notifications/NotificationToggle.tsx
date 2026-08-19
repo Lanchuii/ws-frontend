@@ -105,8 +105,8 @@ const NotificationToggle = ({ isAdmin = false }: NotificationToggleProps) => {
                   ? 'This device will be notified when a worker creates a request.'
                   : 'Receive an alert on this device when a worker creates a request.'
                 : enabled
-                  ? 'This device will receive Monday schedule reminders and request approval or denial updates.'
-                  : 'Receive Monday schedule reminders and request approval or denial updates on this device.'}
+                  ? 'This device will receive schedule, lineup, and request updates.'
+                  : 'Receive schedule reminders, lineup posts, and request actions on this device.'}
             </p>
           </div>
         </div>

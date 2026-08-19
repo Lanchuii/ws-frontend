@@ -8,7 +8,9 @@ export interface ScheduleAssignment {
 }
 
 export interface ScheduleSong {
+  songId?: string;
   title: string;
+  artist?: string;
   key?: string;
 }
 

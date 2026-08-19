@@ -6,6 +6,7 @@ export type WorkerRequestStatus =
   | 'cancelled'
   | 'failed';
 export type SwapMode = 'replacement' | 'exchange';
+export type SwapTargetResponse = 'pending' | 'accepted' | 'declined';
 
 export interface RequestAssignmentSnapshot {
   schedule_id: string;
@@ -28,7 +29,11 @@ export interface WorkerRequest {
   source_assignment?: RequestAssignmentSnapshot;
   target_assignment?: RequestAssignmentSnapshot;
   target_worker_id?: string;
+  target_user_id?: string;
   target_worker_name?: string;
+  target_response?: SwapTargetResponse;
+  target_responded_at?: string;
+  target_response_note?: string;
   unavailable_date?: string;
   reason?: string;
   reviewer_note?: string;

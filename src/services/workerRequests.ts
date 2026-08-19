@@ -88,6 +88,18 @@ export const cancelWorkerRequest = async (id: string): Promise<WorkerRequest> =>
   return response.data.data;
 };
 
+export const respondToSwapRequest = async (
+  id: string,
+  decision: 'accept' | 'decline',
+  note?: string,
+): Promise<WorkerRequest> => {
+  const response = await api.patch(`/worker-requests/${id}/respond`, {
+    decision,
+    note,
+  });
+  return response.data.data;
+};
+
 export const approveWorkerRequest = async (
   id: string,
   note?: string,

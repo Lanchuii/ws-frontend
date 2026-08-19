@@ -83,6 +83,12 @@ const Home = () => {
           schedule={upcomingSchedule}
           targetDate={comingSunday}
           loading={loading}
+          canManageLineup={Boolean(
+            upcomingSchedule && linkedWorker && upcomingSchedule.assignments.some(
+              (assignment) => assignment.workerId === linkedWorker.id && assignment.role === 'Leader',
+            )
+          )}
+          onManageLineup={setLineupSchedule}
         />
         <aside className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -332,7 +338,7 @@ const MemberAssignmentsPanel = ({
                       className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                     >
                       <FaEdit />
-                      {schedule.lineup ? 'Edit lineup' : 'Add lineup'}
+                      {schedule.songs.length || schedule.lineup ? 'Edit lineup' : 'Add lineup'}
                     </button>
                   )}
                 </div>

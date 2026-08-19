@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaEdit } from 'react-icons/fa';
+import { FaBell, FaEdit } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
 import AutoGenerateScheduleModal from '../components/ScheduleDisplay/AutoGenerateScheduleModal';
 import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedulesModal';
 import MonthCalendar from '../components/ScheduleDisplay/MonthCalendar';
 import ScheduleEditorModal from '../components/ScheduleDisplay/ScheduleEditorModal';
 import ScheduleRoster from '../components/ScheduleDisplay/ScheduleRoster';
 import MonthlyWorkerAssignments from '../components/ScheduleDisplay/MonthlyWorkerAssignments';
+import ScheduleReminderModal from '../components/ScheduleDisplay/ScheduleReminderModal';
 import {
   ServiceTypeOption,
   findServiceTypeOption,
@@ -28,14 +30,18 @@ import { getAssignmentForSlot } from '../utils/serviceRules';
 import { formatLongDate, toDateKey } from '../utils/date';
 
 const Calendar = () => {
+  const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [serviceTypeConfigs, setServiceTypeConfigs] = useState<ServiceTypeConfiguration[]>([]);
   const [workerGroups, setWorkerGroups] = useState<WorkerGroup[]>([]);
-  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()));
+  const [selectedDateKey, setSelectedDateKey] = useState(() =>
+    searchParams.get('date') ?? toDateKey(new Date()),
+  );
   const [showEditor, setShowEditor] = useState(false);
   const [showAutoGenerator, setShowAutoGenerator] = useState(false);
+  const [showReminders, setShowReminders] = useState(false);
   const [bulkEditingServiceType, setBulkEditingServiceType] = useState<ServiceTypeConfiguration>();
   const [editingSchedule, setEditingSchedule] = useState<WorshipSchedule | undefined>();
   const [loading, setLoading] = useState(true);
@@ -131,6 +137,15 @@ const Calendar = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowReminders(true)}
+              className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+            >
+              <FaBell /> Send reminders
+            </button>
+          )}
           {isAdmin && (
             <button
               type="button"
@@ -320,6 +335,10 @@ const Calendar = () => {
           onClose={() => setShowAutoGenerator(false)}
           onConfirmed={loadSchedules}
         />
+      )}
+
+      {showReminders && isAdmin && (
+        <ScheduleReminderModal onClose={() => setShowReminders(false)} />
       )}
 
       {bulkEditingServiceType && isAdmin && (
