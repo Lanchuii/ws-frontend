@@ -59,12 +59,31 @@ export const updateUserVerification = async (
   return response.data.data;
 };
 
-export const updatePasswordResetRequirement = async (
-  id: string,
-  required: boolean,
-): Promise<AuthUser> => {
-  const response = await api.patch(`/users/${id}/password-reset`, {
-    required,
-  });
+export interface PasswordResetRequest {
+  _id: string;
+  email: string;
+  username?: string;
+  requested_at: string;
+}
+
+export const fetchPasswordResetRequests = async (): Promise<
+  PasswordResetRequest[]
+> => {
+  const response = await api.get('/users/password-reset-requests');
   return response.data.data;
+};
+
+export const approvePasswordResetRequest = async (
+  id: string,
+  temporaryPassword: string,
+): Promise<void> => {
+  await api.patch(`/users/${id}/password-reset-request/approve`, {
+    temporary_password: temporaryPassword,
+  });
+};
+
+export const rejectPasswordResetRequest = async (
+  id: string,
+): Promise<void> => {
+  await api.patch(`/users/${id}/password-reset-request/reject`);
 };

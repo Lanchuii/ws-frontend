@@ -24,6 +24,13 @@ export const signup = async (payload: SignupPayload): Promise<SignupResult> => {
   return response.data.data;
 };
 
+export const requestPasswordReset = async (
+  username: string,
+): Promise<string> => {
+  const response = await api.post('/auth/forgot-password', { username });
+  return response.data.data.message;
+};
+
 export const refreshSession = async (
   refreshToken: string,
 ): Promise<AuthSession> => {

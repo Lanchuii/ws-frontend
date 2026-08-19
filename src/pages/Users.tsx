@@ -2,7 +2,6 @@ import axios from 'axios';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FaCheck,
-  FaKey,
   FaPlus,
   FaShieldAlt,
   FaTimes,
@@ -18,7 +17,6 @@ import {
   updateUserRole,
   updateUserStatus,
   updateUserVerification,
-  updatePasswordResetRequirement,
 } from '../services/users';
 import {
   fetchWorkers,
@@ -202,14 +200,13 @@ const Users = () => {
           <div className="p-6 text-sm font-medium text-slate-600">Loading users...</div>
         ) : users.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-[1180px] divide-y divide-slate-200 text-left text-sm">
+            <table className="min-w-[1050px] divide-y divide-slate-200 text-left text-sm">
               <thead className="bg-slate-50 text-xs font-bold uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Account</th>
                   <th className="w-48 px-4 py-3">Role</th>
                   <th className="px-4 py-3">Verification</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Password</th>
                   <th className="px-4 py-3">Linked worker</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -263,13 +260,6 @@ const Users = () => {
                           inactiveLabel="Inactive"
                         />
                       </td>
-                      <td className="px-4 py-4">
-                        <StatusBadge
-                          active={!account.password_reset_required}
-                          activeLabel="Current"
-                          inactiveLabel="Reset required"
-                        />
-                      </td>
                       <td className="px-4 py-4 font-semibold text-slate-700">
                         {account.role === 'member' ? (
                           <select
@@ -313,28 +303,6 @@ const Users = () => {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              void runUserUpdate(account._id, () => {
-                                return updatePasswordResetRequirement(
-                                  account._id,
-                                  !account.password_reset_required,
-                                );
-                              });
-                            }}
-                            disabled={isBusy}
-                            className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold disabled:opacity-50 ${
-                              account.password_reset_required
-                                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            <FaKey />
-                            {account.password_reset_required
-                              ? 'Cancel reset'
-                              : 'Require reset'}
-                          </button>
                           <button
                             type="button"
                             onClick={() => {

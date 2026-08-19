@@ -11,6 +11,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Requests from './pages/Requests'
 import ResetPassword from './pages/ResetPassword'
+import ForgotPassword from './pages/ForgotPassword'
 import { useAuth } from './context/useAuth'
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
         <Routes>
           <Route path='/login' element={<Login />} />
           <Route path='/signup' element={<Signup />} />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
           <Route path='*' element={<Navigate to='/login' replace />} />
         </Routes>
       </div>
@@ -53,6 +55,7 @@ function App() {
             <Route path='/calendar' element={<Calendar />} />
             <Route path='/login' element={<Navigate to='/' replace />} />
             <Route path='/signup' element={<Navigate to='/' replace />} />
+            <Route path='/forgot-password' element={<Navigate to='/' replace />} />
             <Route path='/workers' element={<Workers />} />
             <Route path='/users' element={<Users />} />
             <Route path='/services' element={<Services />} />

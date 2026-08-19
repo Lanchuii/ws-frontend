@@ -5,6 +5,7 @@ import {
   FaCheck,
   FaExchangeAlt,
   FaHistory,
+  FaKey,
   FaTimes,
 } from 'react-icons/fa';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -34,10 +35,16 @@ import {
   removeWorkerUnavailability,
 } from '../services/workerRequests';
 import { fetchWorkers } from '../services/workers';
+import {
+  approvePasswordResetRequest,
+  fetchPasswordResetRequests,
+  PasswordResetRequest,
+  rejectPasswordResetRequest,
+} from '../services/users';
 import { formatLongDate, toDateKey } from '../utils/date';
 
 const Requests = () => {
-  const { user, isAuthenticated, isAdmin } = useAuth();
+  const { user, isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const [assignments, setAssignments] = useState<WorshipSchedule[]>([]);
   const [worker, setWorker] = useState<{ id: string; name: string } | null>(null);
@@ -45,6 +52,9 @@ const Requests = () => {
   const [reviewRequests, setReviewRequests] = useState<WorkerRequest[]>([]);
   const [unavailability, setUnavailability] = useState<WorkerUnavailability[]>([]);
   const [workers, setWorkers] = useState<Worker[]>([]);
+  const [passwordResetRequests, setPasswordResetRequests] = useState<
+    PasswordResetRequest[]
+  >([]);
   const [reviewStatus, setReviewStatus] = useState<WorkerRequestStatus | ''>('pending');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
@@ -59,7 +69,7 @@ const Requests = () => {
     const requestsPromise = assignmentResult.worker
       ? fetchMyWorkerRequests({ limit: 100 })
       : Promise.resolve({ items: [], pagination: emptyPagination });
-    const [mine, review, unavailable, workerItems] = await Promise.all([
+    const [mine, review, unavailable, workerItems, passwordResetItems] = await Promise.all([
       requestsPromise,
       isAdmin
         ? fetchWorkerRequests({ status: reviewStatus, limit: 100 })
@@ -68,12 +78,14 @@ const Requests = () => {
         ? fetchWorkerUnavailability()
         : Promise.resolve({ items: [], pagination: emptyPagination }),
       isAdmin ? fetchWorkers() : Promise.resolve([]),
+      isSuperAdmin ? fetchPasswordResetRequests() : Promise.resolve([]),
     ]);
     setMyRequests(mine.items);
     setReviewRequests(review.items);
     setUnavailability(unavailable.items);
     setWorkers(workerItems);
-  }, [isAdmin, reviewStatus]);
+    setPasswordResetRequests(passwordResetItems);
+  }, [isAdmin, isSuperAdmin, reviewStatus]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -217,6 +229,26 @@ const Requests = () => {
             />
           )}
 
+          {isSuperAdmin && (
+            <PasswordResetReviewPanel
+              requests={passwordResetRequests}
+              busyId={busyId}
+              onApprove={(request, temporaryPassword) => runAction(
+                request._id,
+                () => approvePasswordResetRequest(
+                  request._id,
+                  temporaryPassword,
+                ),
+                'Temporary password assigned. Give it securely to the user.',
+              )}
+              onReject={(request) => runAction(
+                request._id,
+                () => rejectPasswordResetRequest(request._id),
+                'Password reset request rejected.',
+              )}
+            />
+          )}
+
           {isAdmin && (
             <AdminReviewPanel
               requests={reviewRequests}
@@ -251,6 +283,116 @@ const Requests = () => {
         </>
       )}
     </main>
+  );
+};
+
+const PasswordResetReviewPanel = ({
+  requests,
+  busyId,
+  onApprove,
+  onReject,
+}: {
+  requests: PasswordResetRequest[];
+  busyId: string;
+  onApprove: (
+    request: PasswordResetRequest,
+    temporaryPassword: string,
+  ) => void;
+  onReject: (request: PasswordResetRequest) => void;
+}) => {
+  const [temporaryPasswords, setTemporaryPasswords] = useState<
+    Record<string, string>
+  >({});
+
+  return (
+    <section className="mt-6 overflow-hidden rounded-lg border border-amber-200 bg-white shadow-sm">
+      <div className="border-b border-amber-100 bg-amber-50 px-5 py-4">
+        <p className="text-xs font-bold uppercase text-amber-700">
+          Super-admin review
+        </p>
+        <div className="mt-1 flex items-center gap-3">
+          <FaKey className="text-amber-700" />
+          <h2 className="text-xl font-bold text-slate-950">
+            Forgot-password requests
+          </h2>
+          <span className="ml-auto rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200">
+            {requests.length}
+          </span>
+        </div>
+      </div>
+
+      {requests.length ? (
+        <div className="divide-y divide-slate-200">
+          {requests.map((request) => {
+            const temporaryPassword = temporaryPasswords[request._id] ?? '';
+            const isBusy = busyId === request._id;
+
+            return (
+              <article
+                key={request._id}
+                className="grid gap-4 px-5 py-4 lg:grid-cols-[minmax(200px,1fr)_minmax(280px,1.4fr)] lg:items-center"
+              >
+                <div>
+                  <p className="font-bold text-slate-950">
+                    {request.username || 'No username'}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {request.email}
+                  </p>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    Requested {new Date(request.requested_at).toLocaleString()}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold uppercase text-slate-600">
+                      Temporary password
+                    </span>
+                    <input
+                      type="text"
+                      value={temporaryPassword}
+                      onChange={(event) => {
+                        setTemporaryPasswords((current) => ({
+                          ...current,
+                          [request._id]: event.target.value,
+                        }));
+                      }}
+                      minLength={8}
+                      autoComplete="off"
+                      placeholder="At least 8 characters"
+                      className={inputClass}
+                    />
+                  </label>
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => onReject(request)}
+                      className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <FaTimes /> Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isBusy || temporaryPassword.length < 8}
+                      onClick={() => onApprove(request, temporaryPassword)}
+                      className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FaCheck /> Approve and assign
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="px-5 py-8 text-sm text-slate-600">
+          No password-reset requests are waiting for review.
+        </p>
+      )}
+    </section>
   );
 };
 

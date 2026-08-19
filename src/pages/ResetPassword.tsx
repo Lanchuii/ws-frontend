@@ -52,7 +52,7 @@ const ResetPassword = () => {
             </p>
             <h1 className="text-2xl font-bold text-slate-950">Reset your password</h1>
             <p className="mt-1 text-sm text-slate-600">
-              A super admin has required a password reset for {user?.email}.
+              You signed in with a temporary password. Choose a permanent password for {user?.email}.
             </p>
           </div>
         </div>
