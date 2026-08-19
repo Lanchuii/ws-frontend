@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type TouchEvent } from 'react'
 import {
   FaBell,
   FaCalendarAlt,
@@ -6,11 +6,13 @@ import {
   FaExchangeAlt,
   FaKey,
   FaMusic,
+  FaTrashAlt,
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 import { InboxNotification } from '../../models/Notification'
 import {
+  clearNotification,
   fetchNotificationInbox,
   markAllNotificationsRead,
   markNotificationRead,
@@ -112,6 +114,20 @@ const NotificationInbox = () => {
     }
   }
 
+  const removeNotification = async (notification: InboxNotification) => {
+    setItems((current) => current.filter((item) => item._id !== notification._id))
+    if (!notification.read_at) {
+      setUnreadCount((count) => Math.max(0, count - 1))
+    }
+
+    try {
+      await clearNotification(notification._id)
+    } catch {
+      setError('Notification could not be cleared.')
+      void refresh(true)
+    }
+  }
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -180,43 +196,12 @@ const NotificationInbox = () => {
             ) : items.length ? (
               <div className="divide-y divide-slate-100">
                 {items.map((notification) => (
-                  <button
+                  <SwipeableNotification
                     key={notification._id}
-                    type="button"
-                    onClick={() => void openNotification(notification)}
-                    className={`flex w-full gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
-                      notification.read_at ? 'bg-white' : 'bg-amber-50/60'
-                    }`}
-                  >
-                    <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-amber-700">
-                      {notification.type === 'schedule_reminder' ||
-                      notification.type === 'schedule_updated' ? (
-                        <FaCalendarAlt />
-                      ) : notification.type.startsWith('lineup_') ? (
-                        <FaMusic />
-                      ) : notification.type === 'password_reset_requested' ? (
-                        <FaKey />
-                      ) : (
-                        <FaExchangeAlt />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-start gap-2">
-                        <span className="flex-1 text-sm font-bold text-slate-950">
-                          {notification.title}
-                        </span>
-                        {!notification.read_at && (
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-600" />
-                        )}
-                      </span>
-                      <span className="mt-0.5 block text-sm leading-5 text-slate-600">
-                        {notification.body}
-                      </span>
-                      <span className="mt-1 block text-xs font-medium text-slate-400">
-                        {formatNotificationTime(notification.createdAt)}
-                      </span>
-                    </span>
-                  </button>
+                    notification={notification}
+                    onOpen={() => void openNotification(notification)}
+                    onClear={() => void removeNotification(notification)}
+                  />
                 ))}
               </div>
             ) : (
@@ -228,6 +213,119 @@ const NotificationInbox = () => {
           </section>
         </>
       )}
+    </div>
+  )
+}
+
+interface SwipeableNotificationProps {
+  notification: InboxNotification
+  onOpen: () => void
+  onClear: () => void
+}
+
+const clearActionWidth = 80
+
+const SwipeableNotification = ({
+  notification,
+  onOpen,
+  onClear,
+}: SwipeableNotificationProps) => {
+  const [offset, setOffset] = useState(0)
+  const startPosition = useRef({ x: 0, y: 0, offset: 0 })
+  const swiped = useRef(false)
+
+  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0]
+    startPosition.current = { x: touch.clientX, y: touch.clientY, offset }
+    swiped.current = false
+  }
+
+  const onTouchMove = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0]
+    const deltaX = touch.clientX - startPosition.current.x
+    const deltaY = touch.clientY - startPosition.current.y
+
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return
+    if (Math.abs(deltaX) > 8) swiped.current = true
+
+    const nextOffset = Math.max(
+      -clearActionWidth,
+      Math.min(0, startPosition.current.offset + deltaX),
+    )
+    setOffset(nextOffset)
+  }
+
+  const onTouchEnd = () => {
+    setOffset((current) => current <= -clearActionWidth / 2 ? -clearActionWidth : 0)
+  }
+
+  const handleOpen = () => {
+    if (swiped.current) {
+      swiped.current = false
+      return
+    }
+    if (offset < 0) {
+      setOffset(0)
+      return
+    }
+    onOpen()
+  }
+
+  return (
+    <div
+      className="relative overflow-hidden bg-red-600 touch-pan-y"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
+      <button
+        type="button"
+        onClick={onClear}
+        onFocus={() => setOffset(-clearActionWidth)}
+        className="absolute inset-y-0 right-0 flex w-20 flex-col items-center justify-center gap-1 bg-red-600 text-xs font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-200"
+        aria-label={`Clear notification: ${notification.title}`}
+      >
+        <FaTrashAlt aria-hidden="true" />
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={handleOpen}
+        style={{ transform: `translateX(${offset}px)` }}
+        className={`relative flex w-full gap-3 px-4 py-3 text-left transition-transform duration-150 hover:bg-slate-50 ${
+          notification.read_at ? 'bg-white' : 'bg-amber-50'
+        }`}
+      >
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-amber-700">
+          {notification.type === 'schedule_reminder' ||
+          notification.type === 'schedule_updated' ? (
+            <FaCalendarAlt />
+          ) : notification.type.startsWith('lineup_') ? (
+            <FaMusic />
+          ) : notification.type === 'password_reset_requested' ? (
+            <FaKey />
+          ) : (
+            <FaExchangeAlt />
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-start gap-2">
+            <span className="flex-1 text-sm font-bold text-slate-950">
+              {notification.title}
+            </span>
+            {!notification.read_at && (
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-600" />
+            )}
+          </span>
+          <span className="mt-0.5 block text-sm leading-5 text-slate-600">
+            {notification.body}
+          </span>
+          <span className="mt-1 block text-xs font-medium text-slate-400">
+            {formatNotificationTime(notification.createdAt)}
+          </span>
+        </span>
+      </button>
     </div>
   )
 }

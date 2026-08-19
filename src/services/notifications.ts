@@ -53,6 +53,13 @@ export const previewScheduleReminders = async (weekStart: string) => {
   return response.data.data
 }
 
+export const clearNotification = async (id: string) => {
+  const response = await api.delete<ApiResponse<{ deleted: boolean }>>(
+    `/push-notifications/inbox/${id}`,
+  )
+  return response.data.data
+}
+
 export const sendScheduleReminders = async (
   weekStart: string,
   userIds: string[],

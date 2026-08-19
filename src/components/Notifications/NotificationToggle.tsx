@@ -94,10 +94,10 @@ const NotificationToggle = ({ isAdmin = false }: NotificationToggleProps) => {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
           <FaBell className="mt-0.5 shrink-0 text-amber-700" />
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-bold text-slate-950">Notifications</p>
             <p className="text-sm text-slate-600">
               {isAdmin
@@ -114,19 +114,22 @@ const NotificationToggle = ({ isAdmin = false }: NotificationToggleProps) => {
           type="button"
           onClick={toggleNotifications}
           disabled={busy}
-          className={`shrink-0 rounded-md px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60 ${
-            enabled
-              ? 'border border-slate-300 text-slate-700 hover:bg-slate-50'
-              : 'bg-slate-950 text-white hover:bg-slate-800'
+          role="switch"
+          aria-checked={enabled}
+          aria-label={`${enabled ? 'Disable' : 'Enable'} notifications`}
+          className={`relative mt-0.5 inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${
+            enabled ? 'bg-amber-600' : 'bg-slate-300'
           }`}
         >
-          {busy
-            ? 'Updating…'
-            : enabled
-              ? 'Disable notifications'
-              : 'Enable notifications'}
+          <span
+            aria-hidden="true"
+            className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+              enabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
         </button>
       </div>
+      {busy && <p className="mt-2 text-xs font-medium text-slate-500">Updating…</p>}
       {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
     </div>
   )
