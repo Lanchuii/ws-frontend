@@ -118,10 +118,10 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-[1500px] overflow-auto rounded-lg bg-white shadow-xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-          <div>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 px-4 py-4 sm:items-center sm:py-6">
+      <section className="flex max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[1500px] flex-col overflow-hidden rounded-lg bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 p-4 sm:p-5">
+          <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
               Auto generate
             </p>
@@ -142,7 +142,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
           </button>
         </div>
 
-        <div className="space-y-5 p-5">
+        <div className="min-w-0 space-y-5 overflow-y-auto p-4 sm:p-5">
           {error && (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
               {error}
@@ -151,7 +151,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
 
           <form
             onSubmit={handlePreview}
-            className={`grid items-end gap-5 rounded-md border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 xl:gap-6 ${
+            className={`grid min-w-0 grid-cols-1 items-end gap-5 rounded-md border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2 xl:gap-6 ${
               serviceType === 'main'
                 ? 'xl:grid-cols-[160px_minmax(240px,320px)_minmax(190px,1fr)_minmax(190px,1fr)_145px]'
                 : 'xl:grid-cols-[160px_minmax(240px,360px)_1fr_145px]'
@@ -182,7 +182,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
                   ))}
                 </select>
               </label>
-              <label className="flex h-10 items-center gap-2 whitespace-nowrap text-sm font-semibold text-slate-700">
+              <label className="flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-700">
                 <input
                   type="checkbox"
                   checked={includeOptionalRoles}
@@ -192,7 +192,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
                 Include optional roles
               </label>
               {serviceType === 'main' && (
-              <label className="flex h-10 items-center gap-2 whitespace-nowrap text-sm font-semibold text-slate-700">
+              <label className="flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-700">
                 <input
                   type="checkbox"
                   checked={allowYouthBackupFallback}
@@ -206,7 +206,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
             <button
               type="submit"
               disabled={loadingPreview}
-              className={`col-span-2 inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 xl:col-span-1 ${
+              className={`col-span-1 inline-flex h-10 items-center justify-center rounded-md bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 xl:col-span-1 ${
                 serviceType === 'main' ? '' : 'xl:col-start-4'
               }`}
             >

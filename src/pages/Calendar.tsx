@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaBell, FaEdit } from 'react-icons/fa';
+import { FaBell, FaEdit, FaUsers } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 import AutoGenerateScheduleModal from '../components/ScheduleDisplay/AutoGenerateScheduleModal';
 import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedulesModal';
@@ -188,14 +188,6 @@ const Calendar = () => {
         />
       )}
 
-      {isAdmin && !loading && (
-        <MonthlyWorkerAssignments
-          monthDate={monthDate}
-          schedules={selectedMonthSchedules}
-          serviceTypes={serviceTypeOptions}
-        />
-      )}
-
       <section className="mt-6">
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
@@ -296,6 +288,7 @@ const Calendar = () => {
           return (
           <MonthlyServiceSummary
             key={serviceType._id}
+            monthDate={monthDate}
             serviceType={serviceType}
             option={option}
             schedules={selectedMonthSchedules.filter((schedule) => {
@@ -359,6 +352,7 @@ const Calendar = () => {
 };
 
 interface MonthlyServiceSummaryProps {
+  monthDate: Date;
   serviceType: ServiceTypeConfiguration;
   option: ServiceTypeOption;
   schedules: WorshipSchedule[];
@@ -463,12 +457,14 @@ const SelectedDateScheduleTable = ({
 };
 
 const MonthlyServiceSummary = ({
+  monthDate,
   serviceType,
   option,
   schedules,
   isAdmin,
   onBulkEdit,
 }: MonthlyServiceSummaryProps) => {
+  const [showAssignments, setShowAssignments] = useState(false);
   const columns = [...serviceType.assignment_slots].sort(
     (a, b) => a.display_order - b.display_order,
   );
@@ -476,12 +472,24 @@ const MonthlyServiceSummary = ({
   return (
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <h2 className="text-xl font-bold text-slate-950">{option.label}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
               {schedules.length}
             </span>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowAssignments((current) => !current)}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                aria-expanded={showAssignments}
+                aria-controls={`assignments-${serviceType.code}`}
+              >
+                <FaUsers aria-hidden="true" />
+                Assignments
+              </button>
+            )}
             {isAdmin && schedules.length > 0 && (
               <button
                 type="button"
@@ -498,6 +506,14 @@ const MonthlyServiceSummary = ({
       </div>
 
       <div>
+        {isAdmin && showAssignments && (
+          <div id={`assignments-${serviceType.code}`}>
+            <MonthlyWorkerAssignments
+              monthDate={monthDate}
+              schedules={schedules}
+            />
+          </div>
+        )}
         {schedules.length > 0 ? (
           <>
             <div className="hidden overflow-x-auto md:block">
