@@ -4,6 +4,7 @@ import {
   FaCalendarAlt,
   FaCheckDouble,
   FaExchangeAlt,
+  FaKey,
   FaMusic,
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
@@ -186,6 +187,8 @@ const NotificationInbox = () => {
                         <FaCalendarAlt />
                       ) : notification.type.startsWith('lineup_') ? (
                         <FaMusic />
+                      ) : notification.type === 'password_reset_requested' ? (
+                        <FaKey />
                       ) : (
                         <FaExchangeAlt />
                       )}

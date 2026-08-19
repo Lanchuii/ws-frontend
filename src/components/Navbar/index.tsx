@@ -17,15 +17,17 @@ import guitarIcon from '../../assets/guitar-svgrepo-com.svg';
 import NotificationInbox from '../Notifications/NotificationInbox';
 import { useAuth } from '../../context/useAuth';
 
+const mobileNavigationQuery = '(max-width: 1123px)';
+
 const Navbar = () => {
   const { user, isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(() =>
-    window.matchMedia('(max-width: 639px)').matches,
+    window.matchMedia(mobileNavigationQuery).matches,
   );
 
   useEffect(() => {
-    const query = window.matchMedia('(max-width: 639px)');
+    const query = window.matchMedia(mobileNavigationQuery);
     const updateViewport = () => setMobileViewport(query.matches);
     query.addEventListener('change', updateViewport);
     return () => query.removeEventListener('change', updateViewport);
@@ -142,7 +144,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1 sm:hidden">
+          <div className="flex shrink-0 items-center gap-1 lg:hidden">
             {isAuthenticated && mobileViewport && <NotificationInbox />}
             <button
               type="button"
@@ -156,7 +158,7 @@ const Navbar = () => {
             </button>
           </div>
 
-          <div className="hidden flex-wrap items-center justify-end gap-2 sm:flex">
+          <div className="hidden flex-wrap items-center justify-end gap-2 lg:flex">
             {navigationItems()}
           </div>
         </div>
@@ -164,7 +166,7 @@ const Navbar = () => {
         {menuOpen && (
           <div
             id="mobile-navigation"
-            className="mt-3 grid gap-1 border-t border-slate-200 pt-3 sm:hidden"
+            className="mt-3 grid gap-1 border-t border-slate-200 pt-3 lg:hidden"
           >
             {navigationItems(true)}
           </div>
