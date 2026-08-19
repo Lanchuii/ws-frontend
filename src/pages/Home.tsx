@@ -14,6 +14,7 @@ import {
 import LineupEditorModal from '../components/ScheduleDisplay/LineupEditorModal';
 import UpcomingSchedulePanel from '../components/ScheduleDisplay/UpcomingSchedulePanel';
 import LeaderSongsEditorModal from '../components/Workers/LeaderSongsEditorModal';
+import NotificationToggle from '../components/Notifications/NotificationToggle';
 import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
@@ -171,6 +172,11 @@ const Home = () => {
             <p className="py-5 text-sm text-slate-600">No upcoming schedules are saved yet.</p>
           )}
         </div>
+        {isAuthenticated && isAdmin && (
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <NotificationToggle isAdmin />
+          </div>
+        )}
       </section>
       )}
 
@@ -213,7 +219,10 @@ const MemberAssignmentsPanel = ({
   const isLeader = worker?.roles.includes('Leader');
 
   return (
-    <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section
+      id="my-serving-dates"
+      className="mt-6 scroll-mt-24 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+    >
       <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700">
@@ -254,6 +263,12 @@ const MemberAssignmentsPanel = ({
           </Link>
         </div>
       </div>
+
+      {worker && (
+        <div className="border-b border-slate-200 bg-amber-50/40 px-5 py-4">
+          <NotificationToggle />
+        </div>
+      )}
 
       {!worker ? (
         <div className="px-5 py-8 text-center">
