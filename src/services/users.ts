@@ -58,3 +58,13 @@ export const updateUserVerification = async (
   });
   return response.data.data;
 };
+
+export const updatePasswordResetRequirement = async (
+  id: string,
+  required: boolean,
+): Promise<AuthUser> => {
+  const response = await api.patch(`/users/${id}/password-reset`, {
+    required,
+  });
+  return response.data.data;
+};

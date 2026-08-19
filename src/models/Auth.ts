@@ -7,6 +7,7 @@ export interface AuthUser {
   role: UserRole;
   is_active: boolean;
   is_verified: boolean;
+  password_reset_required: boolean;
 }
 
 export interface AuthSession {

@@ -1,5 +1,6 @@
 export type NotificationType =
   | 'schedule_reminder'
+  | 'schedule_updated'
   | 'request_created'
   | 'request_approved'
   | 'request_denied'

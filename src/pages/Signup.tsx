@@ -31,7 +31,7 @@ const Signup = () => {
 
   if (awaitingApproval) {
     return (
-      <main className="mx-auto flex min-h-[calc(100vh-144px)] w-full max-w-md items-center px-4 py-10">
+      <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
         <section className="w-full rounded-lg border border-emerald-200 bg-white p-6 shadow-sm">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
             <FaCheck aria-hidden="true" />
@@ -52,7 +52,7 @@ const Signup = () => {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-144px)] w-full max-w-md items-center px-4 py-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
       <section className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-amber-100 text-amber-700">

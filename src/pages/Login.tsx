@@ -19,8 +19,13 @@ const Login = () => {
     setError('');
 
     try {
-      await login(form);
-      navigate(redirectTo, { replace: true });
+      const session = await login(form);
+      navigate(
+        session.user.password_reset_required
+          ? '/reset-password'
+          : redirectTo,
+        { replace: true },
+      );
     } catch (requestError) {
       if (axios.isAxiosError<{ message?: string }>(requestError)) {
         const message = requestError.response?.data?.message;
@@ -43,7 +48,7 @@ const Login = () => {
   };
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-144px)] w-full max-w-md items-center px-4 py-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
       <section className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-amber-100 text-amber-700">

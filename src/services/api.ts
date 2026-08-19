@@ -34,6 +34,26 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    const responseData = error.response?.data as {
+      errors?: { code?: string };
+    } | undefined;
+    if (
+      error.response?.status === 403 &&
+      responseData?.errors?.code === 'PASSWORD_RESET_REQUIRED'
+    ) {
+      const currentSession = getStoredSession();
+      if (currentSession) {
+        setStoredSession({
+          ...currentSession,
+          user: {
+            ...currentSession.user,
+            password_reset_required: true,
+          },
+        });
+      }
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config as RetriableRequestConfig | undefined;
 
     if (error.response?.status !== 401 || !originalRequest || originalRequest._retry) {
