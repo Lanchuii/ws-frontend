@@ -473,9 +473,14 @@ const MonthlyServiceSummary = ({
     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <h2 className="text-xl font-bold text-slate-950">{option.label}</h2>
+          <div className="flex items-center justify-between gap-3 sm:block">
+            <h2 className="text-xl font-bold text-slate-950">{option.label}</h2>
+            <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200 sm:hidden">
+              {schedules.length}
+            </span>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+            <span className="hidden rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200 sm:inline-flex">
               {schedules.length}
             </span>
             {isAdmin && (

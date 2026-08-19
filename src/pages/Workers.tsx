@@ -113,8 +113,8 @@ const Workers = () => {
 
       {isAuthenticated && (
         <>
-          <section className="mb-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="col-span-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:col-span-1">
               <FaUsers className="text-amber-600" />
               <p className="mt-3 text-sm font-medium text-slate-500">Shown workers</p>
               <p className="mt-1 text-3xl font-bold text-slate-950">{workers.length}</p>

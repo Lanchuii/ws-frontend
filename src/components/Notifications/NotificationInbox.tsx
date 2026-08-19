@@ -8,15 +8,18 @@ import {
   FaMusic,
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/useAuth'
 import { InboxNotification } from '../../models/Notification'
 import {
   fetchNotificationInbox,
   markAllNotificationsRead,
   markNotificationRead,
 } from '../../services/notifications'
+import NotificationToggle from './NotificationToggle'
 
 const NotificationInbox = () => {
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const containerRef = useRef<HTMLDivElement>(null)
   const [items, setItems] = useState<InboxNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -153,6 +156,10 @@ const NotificationInbox = () => {
               </button>
             )}
           </header>
+
+          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+            <NotificationToggle isAdmin={isAdmin} />
+          </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto sm:max-h-[28rem]">
             {loading ? (

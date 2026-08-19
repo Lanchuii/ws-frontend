@@ -13,6 +13,7 @@ import Requests from './pages/Requests'
 import ResetPassword from './pages/ResetPassword'
 import ForgotPassword from './pages/ForgotPassword'
 import { useAuth } from './context/useAuth'
+import ScrollToTopButton from './components/ScrollToTopButton'
 
 function App() {
   const { isAuthenticated, user } = useAuth()
@@ -64,6 +65,7 @@ function App() {
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
       </div>
+      <ScrollToTopButton />
       <Footer />
     </div>
   )

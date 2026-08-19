@@ -14,7 +14,6 @@ import {
 import LineupEditorModal from '../components/ScheduleDisplay/LineupEditorModal';
 import UpcomingSchedulePanel from '../components/ScheduleDisplay/UpcomingSchedulePanel';
 import LeaderSongsEditorModal from '../components/Workers/LeaderSongsEditorModal';
-import NotificationToggle from '../components/Notifications/NotificationToggle';
 import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
@@ -94,8 +93,8 @@ const Home = () => {
           )}
           onManageLineup={setLineupSchedule}
         />
-        <aside className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <aside className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="col-span-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:col-span-1">
             <FaClock className="text-amber-600" />
             <p className="mt-3 text-sm font-medium text-slate-500">Coming Sunday</p>
             <p className="mt-1 text-lg font-bold text-slate-950">{formatLongDate(comingSunday)}</p>
@@ -182,11 +181,6 @@ const Home = () => {
             <p className="py-5 text-sm text-slate-600">No upcoming schedules are saved yet.</p>
           )}
         </div>
-        {isAuthenticated && isAdmin && (
-          <div className="mt-4 border-t border-slate-200 pt-4">
-            <NotificationToggle isAdmin />
-          </div>
-        )}
       </section>
       )}
 
@@ -278,12 +272,6 @@ const MemberAssignmentsPanel = ({
           </Link>
         </div>
       </div>
-
-      {worker && (
-        <div className="border-b border-slate-200 bg-amber-50/40 px-5 py-4">
-          <NotificationToggle />
-        </div>
-      )}
 
       {!worker ? (
         <div className="px-5 py-8 text-center">
