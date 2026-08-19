@@ -11,16 +11,17 @@ import {
 import { ScheduleSong, WorshipSchedule } from '../../models/Schedule';
 import { LeaderRepertoireItem } from '../../models/Song';
 import { updateScheduleLineup } from '../../services/schedules';
-import { fetchMyLeaderRepertoire } from '../../services/workers';
+import { fetchLeaderRepertoire, fetchMyLeaderRepertoire } from '../../services/workers';
 import { formatLongDate } from '../../utils/date';
 
 interface Props {
   schedule: WorshipSchedule;
+  repertoireWorkerId?: string;
   onClose: () => void;
   onSaved: (schedule: WorshipSchedule) => void;
 }
 
-const LineupEditorModal = ({ schedule, onClose, onSaved }: Props) => {
+const LineupEditorModal = ({ schedule, repertoireWorkerId, onClose, onSaved }: Props) => {
   const [songs, setSongs] = useState<ScheduleSong[]>(schedule.songs);
   const [spotifyUrl, setSpotifyUrl] = useState(schedule.lineup ?? '');
   const [search, setSearch] = useState('');
@@ -36,13 +37,16 @@ const LineupEditorModal = ({ schedule, onClose, onSaved }: Props) => {
     let active = true;
     setLoadingSongs(true);
     const timer = window.setTimeout(() => {
-      fetchMyLeaderRepertoire({ search, page: 1, limit: 50 })
+      const request = repertoireWorkerId
+        ? fetchLeaderRepertoire(repertoireWorkerId, { search, page: 1, limit: 50 })
+        : fetchMyLeaderRepertoire({ search, page: 1, limit: 50 });
+      request
         .then((result) => { if (active) setRepertoire(result.items); })
         .catch(() => { if (active) setError('Saved songs could not be loaded.'); })
         .finally(() => { if (active) setLoadingSongs(false); });
     }, 200);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [search]);
+  }, [repertoireWorkerId, search]);
 
   const addSavedSong = (item: LeaderRepertoireItem) => {
     if (songs.some((song) => song.songId === item.song_id)) return;
@@ -112,7 +116,9 @@ const LineupEditorModal = ({ schedule, onClose, onSaved }: Props) => {
           {error && <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>}
           <div className="grid gap-6 lg:grid-cols-2">
             <section>
-              <h3 className="font-bold text-slate-950">Choose from your songs</h3>
+              <h3 className="font-bold text-slate-950">
+                {repertoireWorkerId ? "Choose from the leader's songs" : 'Choose from your songs'}
+              </h3>
               <label className="relative mt-3 block"><FaSearch className="pointer-events-none absolute left-3 top-3 text-slate-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title or artist" className="w-full rounded-md border border-slate-300 py-2 pl-10 pr-3" /></label>
               <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-slate-200">
                 {loadingSongs ? <p className="p-4 text-sm text-slate-500">Loading saved songs…</p> : repertoire.length ? repertoire.map((item) => <button key={item._id} type="button" onClick={() => addSavedSong(item)} disabled={songs.some((song) => song.songId === item.song_id)} className="flex w-full items-center justify-between border-b border-slate-100 px-3 py-2 text-left last:border-0 hover:bg-amber-50 disabled:bg-slate-50 disabled:opacity-50"><span><span className="block text-sm font-semibold text-slate-950">{item.song.title}</span><span className="block text-xs text-slate-500">{item.song.artist || 'Unknown artist'}{item.key ? ` · Key ${item.key}` : ''}</span></span><FaPlus className="text-amber-700" /></button>) : <p className="p-4 text-sm text-slate-500">No saved songs match.</p>}

@@ -65,3 +65,27 @@ export const getAssignmentForSlot = <
 
   return undefined;
 };
+
+export const getAssignmentsForSlot = <
+  T extends Pick<ScheduleAssignment, 'slotKey' | 'role'>
+>(
+  assignments: T[],
+  slot: AssignmentSlot,
+  usedIndexes = new Set<number>(),
+) => {
+  const matches: T[] = [];
+
+  assignments.forEach((assignment, index) => {
+    if (!usedIndexes.has(index) && assignment.slotKey === slot.key) {
+      usedIndexes.add(index);
+      matches.push(assignment);
+    }
+  });
+
+  if (matches.length) {
+    return matches;
+  }
+
+  const legacyAssignment = getAssignmentForSlot(assignments, slot, usedIndexes);
+  return legacyAssignment ? [legacyAssignment] : [];
+};

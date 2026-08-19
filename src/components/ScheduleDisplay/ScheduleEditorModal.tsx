@@ -13,7 +13,7 @@ import {
   updateSchedule,
 } from '../../services/schedules';
 import {
-  getAssignmentForSlot,
+  getAssignmentsForSlot,
   getSlotEligibility,
   isWorkerEligible,
 } from '../../utils/serviceRules';
@@ -57,7 +57,7 @@ const ScheduleEditorModal = ({
   );
   const [lineup, setLineup] = useState(schedule?.lineup ?? '');
   const [notes, setNotes] = useState(schedule?.notes ?? '');
-  const [selections, setSelections] = useState<Record<string, SlotSelection>>(
+  const [selections, setSelections] = useState<Record<string, SlotSelection[]>>(
     () => buildInitialSelections(schedule, initialServiceType),
   );
   const [error, setError] = useState('');
@@ -84,7 +84,7 @@ const ScheduleEditorModal = ({
     }
 
     const missingSlot = slots.find(
-      (slot) => slot.required && !selections[slot.key]?.workerId,
+      (slot) => slot.required && !selections[slot.key]?.length,
     );
 
     if (missingSlot) {
@@ -97,20 +97,13 @@ const ScheduleEditorModal = ({
       service_type: serviceType.code,
       lineup: lineup || undefined,
       notes: notes || undefined,
-      assignments: slots
-        .map((slot) => {
-          const selection = selections[slot.key];
-          return selection?.workerId
-            ? {
-                slot_key: slot.key,
-                role: selection.role,
-                worker_id: selection.workerId,
-              }
-            : null;
-        })
-        .filter((assignment): assignment is NonNullable<typeof assignment> =>
-          Boolean(assignment),
-        ),
+      assignments: slots.flatMap((slot) =>
+        (selections[slot.key] ?? []).map((selection) => ({
+          slot_key: slot.key,
+          role: selection.role,
+          worker_id: selection.workerId,
+        })),
+      ),
     };
 
     setSubmitting(true);
@@ -195,7 +188,8 @@ const ScheduleEditorModal = ({
                     .filter((role) => worker.roles.includes(role))
                     .map((role) => ({ worker, role })),
                 );
-              const selection = selections[slot.key];
+              const slotSelections = selections[slot.key] ?? [];
+              const selection = slotSelections[0];
 
               return (
                 <label key={slot.key} className="block">
@@ -203,42 +197,58 @@ const ScheduleEditorModal = ({
                     {slot.label}
                     {slot.required && <span className="text-red-600"> *</span>}
                   </span>
-                  <select
-                    value={
-                      selection
-                        ? `${selection.role}:${selection.workerId}`
-                        : ''
-                    }
-                    onChange={(event) => {
-                      if (!event.target.value) {
-                        const next = { ...selections };
-                        delete next[slot.key];
-                        setSelections(next);
-                        return;
-                      }
+                  {slot.allow_multiple ? (
+                    <div className="mt-1 max-h-44 space-y-1 overflow-auto rounded-md border border-slate-300 bg-white p-2">
+                      {options.map(({ worker, role }) => {
+                        const checked = slotSelections.some(
+                          (item) => item.workerId === worker._id && item.role === role,
+                        );
+                        return (
+                          <label key={`${role}-${worker._id}`} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-slate-50">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                const nextSelections = checked
+                                  ? slotSelections.filter(
+                                      (item) => item.workerId !== worker._id || item.role !== role,
+                                    )
+                                  : [...slotSelections, { role, workerId: worker._id }];
+                                setSelections({ ...selections, [slot.key]: nextSelections });
+                              }}
+                              className="h-4 w-4 accent-amber-600"
+                            />
+                            {worker.name}
+                            {slot.allowed_roles.length > 1 ? ` (${role})` : ''}
+                          </label>
+                        );
+                      })}
+                      {!options.length && <p className="px-2 py-1 text-sm text-slate-500">No eligible workers</p>}
+                    </div>
+                  ) : (
+                    <select
+                      value={selection ? `${selection.role}:${selection.workerId}` : ''}
+                      onChange={(event) => {
+                        if (!event.target.value) {
+                          const next = { ...selections };
+                          delete next[slot.key];
+                          setSelections(next);
+                          return;
+                        }
 
-                      const [role, workerId] = event.target.value.split(':') as [
-                        WorkerRole,
-                        string,
-                      ];
-                      setSelections({
-                        ...selections,
-                        [slot.key]: { role, workerId },
-                      });
-                    }}
-                    className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                  >
-                    <option value="">Unassigned</option>
-                    {options.map(({ worker, role }) => (
-                      <option
-                        key={`${role}-${worker._id}`}
-                        value={`${role}:${worker._id}`}
-                      >
-                        {worker.name}
-                        {slot.allowed_roles.length > 1 ? ` (${role})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                        const [role, workerId] = event.target.value.split(':') as [WorkerRole, string];
+                        setSelections({ ...selections, [slot.key]: [{ role, workerId }] });
+                      }}
+                      className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                    >
+                      <option value="">Unassigned</option>
+                      {options.map(({ worker, role }) => (
+                        <option key={`${role}-${worker._id}`} value={`${role}:${worker._id}`}>
+                          {worker.name}{slot.allowed_roles.length > 1 ? ` (${role})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </label>
               );
             })}
@@ -294,19 +304,19 @@ const buildInitialSelections = (
   }
 
   const usedIndexes = new Set<number>();
-  return serviceType.assignment_slots.reduce<Record<string, SlotSelection>>(
+  return serviceType.assignment_slots.reduce<Record<string, SlotSelection[]>>(
     (result, slot) => {
-      const assignment = getAssignmentForSlot(
+      const assignments = getAssignmentsForSlot(
         schedule.assignments,
         slot,
         usedIndexes,
       );
-      if (assignment?.workerId) {
-        result[slot.key] = {
+      result[slot.key] = assignments
+        .filter((assignment) => assignment.workerId)
+        .map((assignment) => ({
           role: assignment.role as WorkerRole,
-          workerId: assignment.workerId,
-        };
-      }
+          workerId: assignment.workerId as string,
+        }));
       return result;
     },
     {},

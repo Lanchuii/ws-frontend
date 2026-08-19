@@ -26,7 +26,7 @@ import {
   fetchServiceTypes,
   fetchWorkerGroups,
 } from '../services/serviceConfiguration';
-import { getAssignmentForSlot } from '../utils/serviceRules';
+import { getAssignmentsForSlot } from '../utils/serviceRules';
 import { formatLongDate, toDateKey } from '../utils/date';
 
 const Calendar = () => {
@@ -417,7 +417,7 @@ const SelectedDateScheduleTable = ({
                 <td className="px-3 py-3">
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {slots.map((slot) => {
-                      const assignment = getAssignmentForSlot(
+                      const assignments = getAssignmentsForSlot(
                         schedule.assignments,
                         slot,
                         usedIndexes,
@@ -425,7 +425,9 @@ const SelectedDateScheduleTable = ({
                       return (
                         <div key={slot.key} className="border-l-2 border-slate-200 pl-2">
                           <p className="text-xs font-bold uppercase text-slate-500">{slot.label}</p>
-                          <p className="font-semibold text-slate-950">{assignment?.workerName || '-'}</p>
+                          <p className="font-semibold text-slate-950">
+                            {assignments.map((assignment) => assignment.workerName).join(', ') || '-'}
+                          </p>
                         </div>
                       );
                     })}
@@ -521,14 +523,14 @@ const MonthlyServiceSummary = ({
                         </p>
                       </td>
                       {columns.map((column) => {
-                        const assignment = getAssignmentForSlot(
+                        const assignments = getAssignmentsForSlot(
                           schedule.assignments,
                           column,
                           usedIndexes,
                         );
                         return (
                           <td key={column.key} className="px-3 py-3 font-semibold text-slate-950">
-                            {assignment?.workerName || '-'}
+                            {assignments.map((assignment) => assignment.workerName).join(', ') || '-'}
                           </td>
                         );
                       })}
@@ -558,7 +560,9 @@ const MonthlyServiceSummary = ({
                           {column.label}
                         </span>
                         <span className="text-sm font-semibold text-slate-950">
-                          {getAssignmentForSlot(schedule.assignments, column, usedIndexes)?.workerName || '-'}
+                          {getAssignmentsForSlot(schedule.assignments, column, usedIndexes)
+                            .map((assignment) => assignment.workerName)
+                            .join(', ') || '-'}
                         </span>
                       </div>
                     ))}

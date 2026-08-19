@@ -22,6 +22,7 @@ export interface AssignmentSlot {
   label: string;
   allowed_roles: WorkerRole[];
   required: boolean;
+  allow_multiple: boolean;
   display_order: number;
   worker_eligibility_override?: WorkerEligibility;
 }

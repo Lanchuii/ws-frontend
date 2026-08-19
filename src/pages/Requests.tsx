@@ -319,13 +319,14 @@ const SwapRequestForm = ({ schedules, workerId, initialScheduleId, initialSlotKe
           reason,
         });
       } else {
-        const [targetScheduleId, targetSlotKey] = targetValue.split('::');
+        const [targetScheduleId, targetSlotKey, targetWorkerId] = targetValue.split('::');
         await createSwapRequest({
           mode,
           source_schedule_id: sourceScheduleId,
           source_slot_key: sourceSlotKey,
           target_schedule_id: targetScheduleId,
           target_slot_key: targetSlotKey,
+          target_worker_id: targetWorkerId,
           reason,
         });
       }
@@ -368,7 +369,10 @@ const SwapRequestForm = ({ schedules, workerId, initialScheduleId, initialSlotKe
           <select value={targetValue} onChange={(event) => setTargetValue(event.target.value)} className={inputClass} disabled={loadingOptions}>
             <option value="">{loadingOptions ? 'Checking eligible options...' : 'Select an option'}</option>
             {options.map((option) => isAssignmentOption(option) ? (
-              <option key={`${option.schedule_id}:${option.slot_key}`} value={`${option.schedule_id}::${option.slot_key}`}>
+              <option
+                key={`${option.schedule_id}:${option.slot_key}:${option.worker_id}`}
+                value={`${option.schedule_id}::${option.slot_key}::${option.worker_id}`}
+              >
                 {formatLongDate(option.schedule_date)} - {option.service_type} - {option.worker_name} ({option.role})
               </option>
             ) : (

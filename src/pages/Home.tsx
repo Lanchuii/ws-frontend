@@ -84,8 +84,12 @@ const Home = () => {
           targetDate={comingSunday}
           loading={loading}
           canManageLineup={Boolean(
-            upcomingSchedule && linkedWorker && upcomingSchedule.assignments.some(
-              (assignment) => assignment.workerId === linkedWorker.id && assignment.role === 'Leader',
+            upcomingSchedule && (
+              isAdmin || (
+                linkedWorker && upcomingSchedule.assignments.some(
+                  (assignment) => assignment.workerId === linkedWorker.id && assignment.role === 'Leader',
+                )
+              )
             )
           )}
           onManageLineup={setLineupSchedule}
@@ -195,6 +199,11 @@ const Home = () => {
       {lineupSchedule && (
         <LineupEditorModal
           schedule={lineupSchedule}
+          repertoireWorkerId={
+            isAdmin
+              ? lineupSchedule.assignments.find((assignment) => assignment.role === 'Leader')?.workerId
+              : undefined
+          }
           onClose={() => setLineupSchedule(null)}
           onSaved={handleLineupSaved}
         />

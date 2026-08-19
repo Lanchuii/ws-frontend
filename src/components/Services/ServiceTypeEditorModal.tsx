@@ -96,6 +96,7 @@ const ServiceTypeEditorModal = ({ serviceType, groups, onClose, onSaved }: Props
           label: '',
           allowed_roles: [],
           required: false,
+          allow_multiple: false,
           display_order: order,
         },
       ],
@@ -299,7 +300,7 @@ const ServiceTypeEditorModal = ({ serviceType, groups, onClose, onSaved }: Props
               <div>
                 <h3 className="text-base font-bold text-slate-950">Assignment slots</h3>
                 <p className="mt-1 text-sm text-slate-500">
-                  Define required positions, role eligibility, and group exceptions.
+                  Define required positions, role eligibility, multiple-worker slots, and group exceptions.
                 </p>
               </div>
               <button
@@ -317,7 +318,7 @@ const ServiceTypeEditorModal = ({ serviceType, groups, onClose, onSaved }: Props
                 const slotIndex = form.assignment_slots.indexOf(slot);
                 return (
                   <div key={`${slot.key}-${slotIndex}`} className="border border-slate-200 p-4">
-                    <div className="grid gap-3 md:grid-cols-[1fr_1fr_110px_110px_40px]">
+                    <div className="grid gap-3 md:grid-cols-[1fr_1fr_110px_110px_130px_40px]">
                       <Field label="Label">
                         <input
                           value={slot.label}
@@ -353,6 +354,15 @@ const ServiceTypeEditorModal = ({ serviceType, groups, onClose, onSaved }: Props
                           className="h-4 w-4 accent-amber-600"
                         />
                         Required
+                      </label>
+                      <label className="mt-6 flex h-10 items-center gap-2 text-sm font-semibold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(slot.allow_multiple)}
+                          onChange={(event) => updateSlot(slotIndex, { allow_multiple: event.target.checked })}
+                          className="h-4 w-4 accent-amber-600"
+                        />
+                        Allow multiple
                       </label>
                       <button
                         type="button"
