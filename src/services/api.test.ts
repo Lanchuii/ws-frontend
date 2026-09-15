@@ -14,12 +14,19 @@ vi.mock('axios', () => ({
   },
 }));
 
-import { refreshStoredSession } from './api';
+import { getAuthBaseUrl, refreshStoredSession } from './api';
 
 describe('session refresh', () => {
   afterEach(() => {
     clearStoredSession();
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('uses the frontend origin for production authentication', () => {
+    vi.stubEnv('MODE', 'production');
+
+    expect(getAuthBaseUrl()).toBe(window.location.origin);
   });
 
   it('shares one rotating refresh request between simultaneous callers', async () => {
@@ -34,6 +41,13 @@ describe('session refresh', () => {
 
     expect(first).toBe(second);
     expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining('/auth/refresh'),
+      { refreshToken: 'legacy-refresh-token' },
+      expect.objectContaining({
+        headers: expect.objectContaining({ 'x-auth-first-party': '1' }),
+      }),
+    );
 
     resolveRefresh({
       data: {

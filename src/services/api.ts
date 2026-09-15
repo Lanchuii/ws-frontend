@@ -14,6 +14,12 @@ export const getApiBaseUrl = () => {
     : import.meta.env.VITE_REACT_APP_DEV_API_URL;
 };
 
+export const getAuthBaseUrl = () => {
+  return import.meta.env.MODE === 'production'
+    ? window.location.origin
+    : getApiBaseUrl();
+};
+
 interface RetriableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
@@ -25,6 +31,7 @@ export const api = axios.create({
 
 let refreshPromise: Promise<AuthSession> | null = null;
 let csrfPromise: Promise<string> | null = null;
+export const firstPartyAuthHeaders = { 'x-auth-first-party': '1' } as const;
 
 const getCsrfToken = () => {
   const sessionToken = getStoredSession()?.csrfToken;
@@ -38,7 +45,10 @@ export const ensureCsrfToken = async () => {
   const existingToken = getCsrfToken();
   if (existingToken) return existingToken;
   csrfPromise ??= axios
-    .get(`${getApiBaseUrl()}/auth/csrf`, { withCredentials: true })
+    .get(`${getAuthBaseUrl()}/auth/csrf`, {
+      withCredentials: true,
+      headers: firstPartyAuthHeaders,
+    })
     .then((response) => response.data.data.csrfToken as string)
     .finally(() => {
       csrfPromise = null;
@@ -51,11 +61,14 @@ const performSessionRefresh = async (
 ): Promise<AuthSession> => {
   const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
   const response = await axios.post(
-    `${getApiBaseUrl()}/auth/refresh`,
+    `${getAuthBaseUrl()}/auth/refresh`,
     refreshToken ? { refreshToken } : {},
     {
       withCredentials: true,
-      headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
+      headers: {
+        ...firstPartyAuthHeaders,
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      },
     },
   );
   const currentSession = getStoredSession();
