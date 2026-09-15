@@ -59,6 +59,11 @@ const NotificationInbox = () => {
   useEffect(() => {
     if (!open) return
 
+    const previousBodyOverflow = document.body.style.overflow
+    const previousRootOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
     const onPointerDown = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
     }
@@ -69,6 +74,8 @@ const NotificationInbox = () => {
     document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousRootOverflow
       document.removeEventListener('mousedown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
@@ -153,8 +160,8 @@ const NotificationInbox = () => {
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-40 bg-slate-950/20 sm:hidden"
           />
-          <section className="fixed inset-x-3 bottom-3 z-50 flex max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-96">
-          <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <section className="fixed inset-x-3 bottom-3 z-50 flex max-h-[50dvh] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96">
+          <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
             <div>
               <h2 className="font-bold text-slate-950">Notifications</h2>
               <p className="text-xs text-slate-500">
@@ -173,11 +180,11 @@ const NotificationInbox = () => {
             )}
           </header>
 
-          <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="shrink-0 border-b border-slate-200 bg-slate-50 px-4 py-3">
             <NotificationToggle isAdmin={isAdmin} />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto sm:max-h-[28rem]">
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto">
             {loading ? (
               <p className="px-4 py-8 text-center text-sm text-slate-500">
                 Loading notifications…
