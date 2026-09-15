@@ -6,74 +6,186 @@ html.dark {
   color-scheme: dark;
 }
 
+html.dark * {
+  --tw-ring-offset-color: rgb(15 23 42);
+}
+
 html.dark .bg-slate-100 {
-  background-color: rgb(2 6 23);
+  background-color: rgb(28 40 59);
+}
+
+html.dark .min-h-screen.bg-slate-100 {
+  background-color: rgb(7 13 27);
 }
 
 html.dark .bg-white,
 html.dark .bg-white\/95 {
-  background-color: rgb(15 23 42 / 0.97);
+  background-color: rgb(15 25 43 / 0.97);
 }
 
 html.dark .bg-slate-50,
 html.dark .hover\:bg-slate-50:hover,
 html.dark .hover\:bg-slate-100:hover {
-  background-color: rgb(30 41 59);
+  background-color: rgb(23 34 53);
 }
 
-html.dark .bg-slate-200,
+html.dark .bg-slate-200 {
+  background-color: rgb(43 58 80);
+}
+
 html.dark .bg-slate-300 {
-  background-color: rgb(71 85 105);
+  background-color: rgb(58 74 98);
 }
 
+html.dark .border-slate-100,
 html.dark .border-slate-200,
 html.dark .border-slate-300,
 html.dark .ring-slate-200 {
-  border-color: rgb(51 65 85);
-  --tw-ring-color: rgb(51 65 85);
+  border-color: rgb(49 65 88);
+  --tw-ring-color: rgb(49 65 88);
+}
+
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(49 65 88);
 }
 
 html.dark .text-slate-950,
 html.dark .hover\:text-slate-950:hover {
-  color: rgb(248 250 252);
+  color: rgb(241 245 249);
 }
 
+html.dark .text-slate-900,
 html.dark .text-slate-800,
 html.dark .text-slate-700 {
-  color: rgb(226 232 240);
+  color: rgb(218 226 237);
 }
 
 html.dark .text-slate-600 {
-  color: rgb(203 213 225);
+  color: rgb(181 193 209);
 }
 
 html.dark .text-slate-500 {
-  color: rgb(148 163 184);
+  color: rgb(150 165 187);
+}
+
+html.dark .text-slate-400 {
+  color: rgb(129 145 168);
+}
+
+html.dark .from-amber-50 {
+  --tw-gradient-from: rgb(42 33 22) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(42 33 22 / 0) var(--tw-gradient-to-position);
+}
+
+html.dark .via-white {
+  --tw-gradient-to: rgb(17 27 46 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from),
+    rgb(17 27 46) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+html.dark .to-slate-50 {
+  --tw-gradient-to: rgb(23 34 53) var(--tw-gradient-to-position);
 }
 
 html.dark .bg-amber-50,
 html.dark .hover\:bg-amber-50:hover {
-  background-color: rgb(120 53 15 / 0.26);
+  background-color: rgb(42 33 22);
+}
+
+html.dark .bg-amber-100,
+html.dark .hover\:bg-amber-100:hover {
+  background-color: rgb(58 45 25);
+}
+
+html.dark .bg-amber-500 {
+  background-color: rgb(217 144 28);
+}
+
+html.dark .border-amber-100,
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: rgb(105 81 39);
+}
+
+html.dark .ring-amber-100,
+html.dark .ring-amber-200,
+html.dark .ring-amber-300,
+html.dark .focus\:ring-amber-100:focus,
+html.dark .focus\:ring-amber-200:focus,
+html.dark .focus\:ring-amber-300:focus {
+  --tw-ring-color: rgb(105 81 39);
 }
 
 html.dark .bg-red-50,
 html.dark .hover\:bg-red-50:hover {
-  background-color: rgb(127 29 29 / 0.24);
+  background-color: rgb(51 29 37);
+}
+
+html.dark .bg-red-100,
+html.dark .hover\:bg-red-100:hover {
+  background-color: rgb(69 34 43);
+}
+
+html.dark .border-red-200,
+html.dark .border-red-300,
+html.dark .ring-red-200,
+html.dark .focus\:ring-red-200:focus {
+  border-color: rgb(105 48 61);
+  --tw-ring-color: rgb(105 48 61);
 }
 
 html.dark .text-amber-700,
 html.dark .text-amber-800,
 html.dark .hover\:text-amber-800:hover {
-  color: rgb(251 191 36);
+  color: rgb(240 184 76);
 }
 
 html.dark .text-red-700,
-html.dark .text-red-800 {
+html.dark .text-red-800,
+html.dark .text-red-900 {
   color: rgb(252 165 165);
 }
 
+html.dark .bg-emerald-50,
+html.dark .hover\:bg-emerald-50:hover {
+  background-color: rgb(19 43 40);
+}
+
+html.dark .border-emerald-200,
+html.dark .ring-emerald-200 {
+  border-color: rgb(40 82 73);
+  --tw-ring-color: rgb(40 82 73);
+}
+
+html.dark .text-emerald-600,
 html.dark .text-emerald-700 {
   color: rgb(110 231 183);
+}
+
+html.dark .bg-violet-50,
+html.dark .bg-violet-100,
+html.dark .hover\:bg-violet-100:hover {
+  background-color: rgb(38 32 61);
+}
+
+html.dark .border-violet-200,
+html.dark .border-violet-300,
+html.dark .ring-violet-100,
+html.dark .ring-violet-200,
+html.dark .ring-violet-300,
+html.dark .focus\:ring-violet-100:focus {
+  border-color: rgb(76 65 114);
+  --tw-ring-color: rgb(76 65 114);
+}
+
+html.dark .text-violet-600,
+html.dark .text-violet-700,
+html.dark .text-violet-800 {
+  color: rgb(196 181 253);
+}
+
+html.dark .hover\:bg-white:hover {
+  background-color: rgb(24 36 56);
 }
 
 html.dark input,
