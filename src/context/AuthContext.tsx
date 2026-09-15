@@ -13,6 +13,7 @@ interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<AuthSession>;
   resetPassword: (password: string) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<SignupResult>;
+  updateCurrentUser: (user: AuthUser) => void;
   logout: () => Promise<void>;
 }
 
@@ -89,6 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
       signup: async (payload) => {
         return await signupRequest(payload);
+      },
+      updateCurrentUser: (user) => {
+        if (!session) return;
+        saveSession({ ...session, user });
       },
       logout: async () => {
         try {

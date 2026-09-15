@@ -95,6 +95,13 @@ export const updateUserVerification = async (
   return response.data.data;
 };
 
+export const updateMyUsername = async (
+  username: string,
+): Promise<AuthUser> => {
+  const response = await api.patch('/auth/profile', { username });
+  return response.data.data;
+};
+
 export interface PasswordResetRequest {
   _id: string;
   email: string;

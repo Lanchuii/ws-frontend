@@ -6,7 +6,7 @@ import {
   FaExchangeAlt,
   FaHome,
   FaSignInAlt,
-  FaSignOutAlt,
+  FaCog,
   FaSlidersH,
   FaTimes,
   FaUserPlus,
@@ -20,7 +20,7 @@ import { useAuth } from '../../context/useAuth';
 const mobileNavigationQuery = '(max-width: 1123px)';
 
 const Navbar = () => {
-  const { user, isAuthenticated, isAdmin, isSuperAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(() =>
     window.matchMedia(mobileNavigationQuery).matches,
@@ -94,19 +94,10 @@ const Navbar = () => {
             >
               {formatRole(user?.role)}
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                closeMenu();
-              }}
-              className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 ${
-                mobile ? 'w-full justify-start' : ''
-              }`}
-            >
-              <FaSignOutAlt />
-              Logout
-            </button>
+            <NavLink to="/settings" className={getLinkClass} onClick={closeMenu}>
+              <FaCog />
+              Settings
+            </NavLink>
           </>
         ) : (
           <>

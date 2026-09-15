@@ -15,6 +15,7 @@ const Services = lazy(() => import('./pages/Services'))
 const Requests = lazy(() => import('./pages/Requests'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 const PageFallback = () => (
   <div className='flex min-h-64 items-center justify-center text-sm font-semibold text-slate-600'>
@@ -80,6 +81,7 @@ function App() {
             <Route path='/users' element={<Users />} />
             <Route path='/services' element={<Services />} />
             <Route path='/requests' element={<Requests />} />
+            <Route path='/settings' element={<Settings />} />
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
         </Suspense>
