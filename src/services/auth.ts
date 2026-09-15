@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { AuthSession, SignupResult } from '../models/Auth';
-import { api } from './api';
-import { getApiBaseUrl } from './api';
+import { api, ensureCsrfToken, getApiBaseUrl } from './api';
 
 export interface LoginPayload {
   login: string;
@@ -25,19 +24,29 @@ export const signup = async (payload: SignupPayload): Promise<SignupResult> => {
 };
 
 export const requestPasswordReset = async (
-  username: string,
+  email: string,
 ): Promise<string> => {
-  const response = await api.post('/auth/forgot-password', { username });
+  const response = await api.post('/auth/forgot-password', { email });
   return response.data.data.message;
 };
 
 export const refreshSession = async (
-  refreshToken: string,
+  refreshToken?: string,
 ): Promise<AuthSession> => {
-  const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
-    refreshToken,
-  });
+  const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
+  const response = await axios.post(
+    `${getApiBaseUrl()}/auth/refresh`,
+    refreshToken ? { refreshToken } : {},
+    {
+      withCredentials: true,
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
+    },
+  );
   return response.data.data;
+};
+
+export const logout = async () => {
+  await api.post('/auth/logout');
 };
 
 export const resetPassword = async (

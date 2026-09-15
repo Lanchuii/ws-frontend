@@ -174,7 +174,7 @@ const BulkEditSchedulesModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-[1500px] overflow-auto rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Bulk schedule editor" className="max-h-full w-full max-w-[1500px] overflow-auto rounded-lg bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">

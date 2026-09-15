@@ -1,14 +1,31 @@
 import { Meeting, MeetingReminderStatus, SaveMeetingPayload } from '../models/Meeting';
 import { api } from './api';
 
-export const fetchMeetings = async (): Promise<Meeting[]> => {
-  const response = await api.get('/meetings');
-  const raw = unwrap(response.data);
-  const items = Array.isArray(raw)
-    ? raw
-    : isRecord(raw) && Array.isArray(raw.items)
-      ? raw.items
-      : [];
+export const fetchMeetings = async (
+  query: { from?: string; to?: string } = {},
+): Promise<Meeting[]> => {
+  const items: unknown[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const response = await api.get('/meetings', {
+      params: { ...query, page, limit: 100 },
+    });
+    const raw = unwrap(response.data);
+    items.push(...(Array.isArray(raw)
+      ? raw
+      : isRecord(raw) && Array.isArray(raw.items)
+        ? raw.items
+        : []));
+    const pagination = isRecord(raw) && isRecord(raw.pagination)
+      ? raw.pagination
+      : undefined;
+    lastPage = typeof pagination?.last_page === 'number'
+      ? pagination.last_page
+      : 1;
+    page += 1;
+  } while (page <= lastPage);
 
   return items
     .map(normalizeMeeting)
@@ -28,6 +45,16 @@ export const updateMeeting = async (id: string, payload: SaveMeetingPayload) => 
 
 export const deleteMeeting = async (id: string) => {
   await api.delete(`/meetings/${id}`);
+};
+
+export const retryMeetingReminder = async (
+  meetingId: string,
+  reminderId: string,
+) => {
+  const response = await api.post(
+    `/meetings/${meetingId}/reminders/${reminderId}/retry`,
+  );
+  return requireMeeting(unwrap(response.data));
 };
 
 const normalizeMeeting = (value: unknown): Meeting | null => {
@@ -50,6 +77,9 @@ const normalizeMeeting = (value: unknown): Meeting | null => {
           scheduledFor: getString(reminder, 'scheduled_for') ?? '',
           status: normalizeStatus(getString(reminder, 'status')),
           sentAt: getString(reminder, 'sent_at'),
+          retryCount: getNumber(reminder, 'retry_count'),
+          nextAttemptAt: getString(reminder, 'next_attempt_at'),
+          lastError: getString(reminder, 'last_error'),
         }))
       : [],
     audience: normalizeAudience(value.audience),
@@ -79,7 +109,9 @@ const unwrap = (value: unknown): unknown => {
 };
 
 const normalizeStatus = (value?: string): MeetingReminderStatus => {
-  return value === 'processing' || value === 'sent' ? value : 'pending';
+  return value === 'processing' || value === 'sent' || value === 'failed'
+    ? value
+    : 'pending';
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

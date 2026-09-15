@@ -27,6 +27,9 @@ const NotificationInbox = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
   const [error, setError] = useState('')
 
   const refresh = async (quiet = false) => {
@@ -36,6 +39,8 @@ const NotificationInbox = () => {
       const inbox = await fetchNotificationInbox()
       setItems(inbox.items)
       setUnreadCount(inbox.unread_count)
+      setPage(inbox.pagination.page || 1)
+      setLastPage(inbox.pagination.last_page || 1)
       setError('')
     } catch {
       if (!quiet) setError('Notifications could not be loaded.')
@@ -118,6 +123,27 @@ const NotificationInbox = () => {
     } catch {
       setError('Notifications could not be updated.')
       void refresh(true)
+    }
+  }
+
+  const loadMore = async () => {
+    if (loadingMore || page >= lastPage) return
+    setLoadingMore(true)
+    try {
+      const inbox = await fetchNotificationInbox(20, page + 1)
+      setItems((current) => [
+        ...current,
+        ...inbox.items.filter(
+          (item) => !current.some((existing) => existing._id === item._id),
+        ),
+      ])
+      setUnreadCount(inbox.unread_count)
+      setPage(inbox.pagination.page)
+      setLastPage(inbox.pagination.last_page)
+    } catch {
+      setError('More notifications could not be loaded.')
+    } finally {
+      setLoadingMore(false)
     }
   }
 
@@ -210,6 +236,18 @@ const NotificationInbox = () => {
                     onClear={() => void removeNotification(notification)}
                   />
                 ))}
+                {page < lastPage && (
+                  <div className="bg-white px-4 py-3 text-center">
+                    <button
+                      type="button"
+                      disabled={loadingMore}
+                      onClick={() => void loadMore()}
+                      className="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {loadingMore ? 'Loading…' : 'Load more'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="px-4 py-8 text-center text-sm text-slate-500">

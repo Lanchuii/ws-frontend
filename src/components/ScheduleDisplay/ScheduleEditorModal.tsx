@@ -17,6 +17,7 @@ import {
   getSlotEligibility,
   isWorkerEligible,
 } from '../../utils/serviceRules';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface Props {
   date: string;
@@ -62,6 +63,7 @@ const ScheduleEditorModal = ({
   );
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const dialogProps = useAccessibleDialog(onClose);
 
   const serviceType = serviceTypes.find(
     (item) => item.code === serviceTypeCode,
@@ -126,7 +128,7 @@ const ScheduleEditorModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-xl">
+      <section {...dialogProps} aria-label="Schedule editor" className="max-h-full w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
             <p className="text-sm font-semibold uppercase text-amber-700">

@@ -35,19 +35,13 @@ const paramsFor = (filters: RequestFilters) => ({
 export const fetchMyWorkerRequests = async (
   filters: RequestFilters = {},
 ): Promise<Paginated<WorkerRequest>> => {
-  const response = await api.get('/worker-requests/mine', {
-    params: paramsFor(filters),
-  });
-  return response.data.data;
+  return fetchAllPages<WorkerRequest>('/worker-requests/mine', filters);
 };
 
 export const fetchWorkerRequests = async (
   filters: RequestFilters = {},
 ): Promise<Paginated<WorkerRequest>> => {
-  const response = await api.get('/worker-requests', {
-    params: paramsFor(filters),
-  });
-  return response.data.data;
+  return fetchAllPages<WorkerRequest>('/worker-requests', filters);
 };
 
 export const fetchSwapOptions = async (
@@ -117,13 +111,44 @@ export const rejectWorkerRequest = async (
 };
 
 export const fetchWorkerUnavailability = async (): Promise<Paginated<WorkerUnavailability>> => {
-  const response = await api.get('/worker-unavailability', {
-    params: { active: true, limit: 100 },
+  return fetchAllPages<WorkerUnavailability>('/worker-unavailability', {
+    active: true,
+    limit: 100,
   });
-  return response.data.data;
 };
 
 export const removeWorkerUnavailability = async (id: string) => {
   const response = await api.delete(`/worker-unavailability/${id}`);
   return response.data.data as WorkerUnavailability;
+};
+
+const fetchAllPages = async <T>(
+  path: string,
+  filters: RequestFilters & { active?: boolean } = {},
+): Promise<Paginated<T>> => {
+  const requestedPage = filters.page;
+  const limit = filters.limit ?? 100;
+  const firstResponse = await api.get(path, {
+    params: paramsFor({ ...filters, page: requestedPage ?? 1, limit }),
+  });
+  const first = firstResponse.data.data as Paginated<T>;
+  if (requestedPage) return first;
+
+  const items = [...first.items];
+  for (let page = 2; page <= first.pagination.last_page; page += 1) {
+    const response = await api.get(path, {
+      params: paramsFor({ ...filters, page, limit }),
+    });
+    items.push(...(response.data.data as Paginated<T>).items);
+  }
+
+  return {
+    items,
+    pagination: {
+      page: items.length ? 1 : 0,
+      per_page: items.length,
+      last_page: items.length ? 1 : 0,
+      total_rows: first.pagination.total_rows,
+    },
+  };
 };

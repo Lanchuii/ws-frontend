@@ -53,7 +53,7 @@ const WorkerGroupEditorModal = ({ group, onClose, onSaved }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Worker group editor" className="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl">
         <header className="flex items-start justify-between border-b border-slate-200 p-5">
           <div>
             <p className="text-sm font-semibold uppercase text-amber-700">Worker group</p>

@@ -5,10 +5,10 @@ interface ApiResponse<T> {
   data: T
 }
 
-export const fetchNotificationInbox = async (limit = 20) => {
+export const fetchNotificationInbox = async (limit = 20, page = 1) => {
   const response = await api.get<ApiResponse<NotificationInboxResult>>(
     '/push-notifications/inbox',
-    { params: { limit } },
+    { params: { limit, page } },
   )
   return response.data.data
 }

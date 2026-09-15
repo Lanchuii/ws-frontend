@@ -58,7 +58,7 @@ const ScheduleReminderModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Schedule reminders" className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
         <header className="flex items-start justify-between border-b border-slate-200 p-5">
           <div><p className="text-sm font-bold uppercase text-amber-700">Schedule reminders</p><h2 className="mt-1 text-2xl font-bold text-slate-950">Notify selected users</h2></div>
           <button type="button" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100" aria-label="Close reminder modal"><FaTimes /></button>

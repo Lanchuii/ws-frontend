@@ -1,23 +1,39 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom'
-import Home from "./pages/Home"
-import Calendar from './pages/Calendar'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import Leaders from './pages/Leaders'
-import Workers from './pages/Workers'
-import Users from './pages/Users'
-import Services from './pages/Services'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import Requests from './pages/Requests'
-import ResetPassword from './pages/ResetPassword'
-import ForgotPassword from './pages/ForgotPassword'
 import { useAuth } from './context/useAuth'
 import ScrollToTopButton from './components/ScrollToTopButton'
 
+const Home = lazy(() => import('./pages/Home'))
+const Calendar = lazy(() => import('./pages/Calendar'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const Workers = lazy(() => import('./pages/Workers'))
+const Users = lazy(() => import('./pages/Users'))
+const Services = lazy(() => import('./pages/Services'))
+const Requests = lazy(() => import('./pages/Requests'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+
+const PageFallback = () => (
+  <div className='flex min-h-64 items-center justify-center text-sm font-semibold text-slate-600'>
+    Loading page...
+  </div>
+)
+
 function App() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, isReady, user } = useAuth()
   const location = useLocation()
+
+  if (!isReady) {
+    return (
+      <div className='flex min-h-screen items-center justify-center bg-slate-100 text-sm font-semibold text-slate-600'>
+        Restoring your session...
+      </div>
+    )
+  }
+
   const resetRequired = Boolean(
     isAuthenticated && user?.password_reset_required,
   )
@@ -27,7 +43,7 @@ function App() {
   }
 
   if (resetRequired) {
-    return <ResetPassword />
+    return <Suspense fallback={<PageFallback />}><ResetPassword /></Suspense>
   }
 
   if (location.pathname === '/reset-password') {
@@ -37,12 +53,14 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className='min-h-screen bg-slate-100 text-slate-950'>
-        <Routes>
-          <Route path='/login' element={<Login />} />
-          <Route path='/signup' element={<Signup />} />
-          <Route path='/forgot-password' element={<ForgotPassword />} />
-          <Route path='*' element={<Navigate to='/login' replace />} />
-        </Routes>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path='/login' element={<Login />} />
+            <Route path='/signup' element={<Signup />} />
+            <Route path='/forgot-password' element={<ForgotPassword />} />
+            <Route path='*' element={<Navigate to='/login' replace />} />
+          </Routes>
+        </Suspense>
       </div>
     )
   }
@@ -51,6 +69,7 @@ function App() {
     <div className='flex min-h-screen flex-col bg-slate-100 text-slate-950'>
       <div className='flex-1'>
         <Navbar />
+        <Suspense fallback={<PageFallback />}>
           <Routes> 
             <Route path='/' element={<Home />} />
             <Route path='/calendar' element={<Calendar />} />
@@ -61,9 +80,9 @@ function App() {
             <Route path='/users' element={<Users />} />
             <Route path='/services' element={<Services />} />
             <Route path='/requests' element={<Requests />} />
-            <Route path='/Leaders' element={<Leaders />} />
             <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
+        </Suspense>
       </div>
       <ScrollToTopButton />
       <Footer />

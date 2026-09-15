@@ -262,7 +262,7 @@ const AutoGenerateScheduleModal = ({ monthDate, workers, serviceTypes, workerGro
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 px-4 py-4 sm:items-center sm:py-6">
-      <section className="flex max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[1500px] flex-col overflow-hidden rounded-lg bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]">
+      <section role="dialog" aria-modal="true" aria-label="Auto-generate schedules" className="flex max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[1500px] flex-col overflow-hidden rounded-lg bg-white shadow-xl sm:max-h-[calc(100dvh-3rem)]">
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Auto generate</p>

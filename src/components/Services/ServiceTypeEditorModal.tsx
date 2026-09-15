@@ -165,7 +165,7 @@ const ServiceTypeEditorModal = ({ serviceType, groups, onClose, onSaved }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4">
-      <section className="max-h-full w-full max-w-6xl overflow-auto rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Service type editor" className="max-h-full w-full max-w-6xl overflow-auto rounded-lg bg-white shadow-xl">
         <header className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white p-5">
           <div>
             <p className="text-sm font-semibold uppercase text-amber-700">Service type</p>

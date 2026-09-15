@@ -3,6 +3,7 @@ import { FormEvent, useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { UserRole } from '../../models/Auth';
 import { createUser } from '../../services/users';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface Props {
   onClose: () => void;
@@ -20,6 +21,7 @@ const UserEditorModal = ({ onClose, onSaved }: Props) => {
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const dialogProps = useAccessibleDialog(onClose);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,7 +48,7 @@ const UserEditorModal = ({ onClose, onSaved }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-xl overflow-auto rounded-lg bg-white shadow-xl">
+      <section {...dialogProps} aria-label="User editor" className="max-h-full w-full max-w-xl overflow-auto rounded-lg bg-white shadow-xl">
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">

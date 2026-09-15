@@ -1,4 +1,4 @@
-export type MeetingReminderStatus = 'pending' | 'processing' | 'sent';
+export type MeetingReminderStatus = 'pending' | 'processing' | 'sent' | 'failed';
 export type MeetingAudienceMode = 'all_active' | 'groups' | 'workers';
 
 export interface MeetingAudience {
@@ -14,6 +14,9 @@ export interface MeetingReminder {
   scheduledFor: string;
   status: MeetingReminderStatus;
   sentAt?: string;
+  retryCount?: number;
+  nextAttemptAt?: string;
+  lastError?: string;
 }
 
 export interface Meeting {

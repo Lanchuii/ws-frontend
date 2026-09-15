@@ -1,11 +1,47 @@
 import { AuthUser, UserRole } from '../models/Auth';
 import { api } from './api';
+import { PaginatedResult } from '../models/Song';
 
-export const fetchUsers = async (): Promise<AuthUser[]> => {
-  const response = await api.get('/users');
+export interface UserQuery {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const fetchUsersPage = async (
+  query: UserQuery = {},
+): Promise<PaginatedResult<AuthUser>> => {
+  const response = await api.get('/users', { params: query });
   const data = response.data.data;
 
-  return Array.isArray(data) ? data : data.items ?? [];
+  if (Array.isArray(data)) {
+    return {
+      items: data,
+      pagination: {
+        page: 1,
+        per_page: data.length,
+        last_page: data.length ? 1 : 0,
+        total_rows: data.length,
+      },
+    };
+  }
+
+  return data;
+};
+
+export const fetchUsers = async (): Promise<AuthUser[]> => {
+  const items: AuthUser[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const result = await fetchUsersPage({ page, limit: 100 });
+    items.push(...result.items);
+    lastPage = result.pagination.last_page;
+    page += 1;
+  } while (page <= lastPage);
+
+  return items;
 };
 
 export const fetchLinkableUsers = async (): Promise<AuthUser[]> => {

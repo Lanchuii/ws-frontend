@@ -15,13 +15,49 @@ export interface SaveWorkerPayload {
   }>;
 }
 
-export const fetchWorkers = async (status?: WorkerStatus): Promise<Worker[]> => {
+export interface WorkerQuery {
+  status?: WorkerStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const fetchWorkersPage = async (
+  query: WorkerQuery = {},
+): Promise<PaginatedResult<Worker>> => {
   const response = await api.get('/workers', {
-    params: status ? { status } : undefined,
+    params: query,
   });
   const data = response.data.data;
 
-  return Array.isArray(data) ? data : data.items ?? [];
+  if (Array.isArray(data)) {
+    return {
+      items: data,
+      pagination: {
+        page: 1,
+        per_page: data.length,
+        last_page: data.length ? 1 : 0,
+        total_rows: data.length,
+      },
+    };
+  }
+
+  return data;
+};
+
+export const fetchWorkers = async (status?: WorkerStatus): Promise<Worker[]> => {
+  const items: Worker[] = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const result = await fetchWorkersPage({ status, page, limit: 100 });
+    items.push(...result.items);
+    lastPage = result.pagination.last_page;
+    page += 1;
+  } while (page <= lastPage);
+
+  return items;
 };
 
 export const createWorker = async (payload: SaveWorkerPayload): Promise<Worker> => {

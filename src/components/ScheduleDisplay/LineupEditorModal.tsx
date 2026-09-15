@@ -107,7 +107,7 @@ const LineupEditorModal = ({ schedule, repertoireWorkerId, onClose, onSaved }: P
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Schedule lineup editor" className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
         <header className="flex items-start justify-between border-b border-slate-200 p-5">
           <div><p className="inline-flex items-center gap-2 text-sm font-bold uppercase text-amber-700"><FaLink /> Schedule lineup</p><h2 className="mt-1 text-xl font-bold text-slate-950">{formatLongDate(schedule.date)}</h2></div>
           <button type="button" onClick={onClose} className="rounded-md p-2 text-slate-500 hover:bg-slate-100" aria-label="Close lineup editor"><FaTimes /></button>

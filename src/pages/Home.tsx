@@ -18,11 +18,12 @@ import { getServiceTypeOption } from '../constants/serviceTypes';
 import { useAuth } from '../context/useAuth';
 import { WorshipSchedule } from '../models/Schedule';
 import { WorkerRole } from '../models/Worker';
-import { fetchMyAssignments, fetchSchedules } from '../services/schedules';
+import { fetchMyAssignments, fetchSchedules, fetchScheduleSummary } from '../services/schedules';
 import { formatLongDate, getComingSunday, isSameDateKey, toDateKey } from '../utils/date';
 
 const Home = () => {
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
+  const [activeScheduleCount, setActiveScheduleCount] = useState(0);
   const [myAssignments, setMyAssignments] = useState<WorshipSchedule[]>([]);
   const [linkedWorker, setLinkedWorker] = useState<LinkedWorker | null>(null);
   const [showSongEditor, setShowSongEditor] = useState(false);
@@ -40,12 +41,17 @@ const Home = () => {
     }
 
     setLoading(true);
+    const from = toDateKey(new Date());
+    const rangeEnd = new Date();
+    rangeEnd.setDate(rangeEnd.getDate() + 90);
     Promise.all([
-      fetchSchedules(),
+      fetchSchedules({ from, to: toDateKey(rangeEnd), limit: 100 }),
+      fetchScheduleSummary(),
       isAdmin ? Promise.resolve(null) : fetchMyAssignments(),
     ])
-      .then(([items, assignmentsResult]) => {
+      .then(([items, summary, assignmentsResult]) => {
         setSchedules(items);
+        setActiveScheduleCount(summary.active_count);
         setMyAssignments(assignmentsResult?.items ?? []);
         setLinkedWorker(assignmentsResult?.worker ?? null);
         setError('');
@@ -59,7 +65,6 @@ const Home = () => {
   const upcomingSchedule = schedules.find((schedule) => {
     return isSameDateKey(schedule.date, comingSundayKey);
   });
-  const activeSchedules = schedules.filter((schedule) => schedule.status === 'active');
   const todayKey = toDateKey(new Date());
   const nextSchedules = schedules
     .filter((schedule) => schedule.date >= todayKey)
@@ -102,7 +107,7 @@ const Home = () => {
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <FaCalendarAlt className="text-amber-600" />
             <p className="mt-3 text-sm font-medium text-slate-500">Active Schedules</p>
-            <p className="mt-1 text-3xl font-bold text-slate-950">{activeSchedules.length}</p>
+            <p className="mt-1 text-3xl font-bold text-slate-950">{activeScheduleCount}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <FaUsers className="text-amber-600" />

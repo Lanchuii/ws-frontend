@@ -12,7 +12,8 @@ export interface AuthUser {
 
 export interface AuthSession {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
+  csrfToken?: string;
   user: AuthUser;
 }
 

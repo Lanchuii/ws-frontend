@@ -19,7 +19,31 @@ interface RetriableRequestConfig extends InternalAxiosRequestConfig {
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
+  withCredentials: true,
 });
+
+let refreshPromise: Promise<ReturnType<typeof getStoredSession>> | null = null;
+let csrfPromise: Promise<string> | null = null;
+
+const getCsrfToken = () => {
+  const sessionToken = getStoredSession()?.csrfToken;
+  if (sessionToken) return sessionToken;
+  const prefix = 'ws_csrf=';
+  const item = document.cookie.split('; ').find((cookie) => cookie.startsWith(prefix));
+  return item ? decodeURIComponent(item.slice(prefix.length)) : undefined;
+};
+
+export const ensureCsrfToken = async () => {
+  const existingToken = getCsrfToken();
+  if (existingToken) return existingToken;
+  csrfPromise ??= axios
+    .get(`${getApiBaseUrl()}/auth/csrf`, { withCredentials: true })
+    .then((response) => response.data.data.csrfToken as string)
+    .finally(() => {
+      csrfPromise = null;
+    });
+  return await csrfPromise;
+};
 
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -62,23 +86,30 @@ api.interceptors.response.use(
 
     const refreshToken = getRefreshToken();
 
-    if (!refreshToken) {
-      clearStoredSession();
-      return Promise.reject(error);
-    }
-
     try {
       originalRequest._retry = true;
-      const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
-        refreshToken,
+      const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
+      refreshPromise ??= axios.post(
+        `${getApiBaseUrl()}/auth/refresh`,
+        refreshToken ? { refreshToken } : {},
+        {
+          withCredentials: true,
+          headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
+        },
+      ).then((response) => {
+        const currentSession = getStoredSession();
+        const nextSession = {
+          ...response.data.data,
+          user: response.data.data.user ?? currentSession?.user,
+        };
+        setStoredSession(nextSession);
+        return nextSession;
+      }).finally(() => {
+        refreshPromise = null;
       });
-      const currentSession = getStoredSession();
-      const nextSession = {
-        ...response.data.data,
-        user: response.data.data.user ?? currentSession?.user,
-      };
+      const nextSession = await refreshPromise;
 
-      setStoredSession(nextSession);
+      if (!nextSession) throw new Error('Session refresh failed');
       originalRequest.headers.Authorization = `Bearer ${nextSession.accessToken}`;
 
       return api(originalRequest);

@@ -4,6 +4,7 @@ import { AuthUser } from '../../models/Auth';
 import { Worker, WorkerLabel, WorkerRole, WorkerStatus } from '../../models/Worker';
 import { createWorker, SaveWorkerPayload, updateWorker } from '../../services/workers';
 import { WorkerGroup } from '../../models/ServiceConfiguration';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface Props {
   worker?: Worker;
@@ -39,6 +40,7 @@ const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) =
   );
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const dialogProps = useAccessibleDialog(onClose);
 
   const toggleRole = (role: WorkerRole) => {
     setRoles((current) =>
@@ -96,7 +98,7 @@ const WorkerEditorModal = ({ worker, users, groups, onClose, onSaved }: Props) =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-xl">
+      <section {...dialogProps} aria-label="Worker editor" className="max-h-full w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">

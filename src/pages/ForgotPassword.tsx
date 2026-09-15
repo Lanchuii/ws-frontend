@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { requestPasswordReset } from '../services/auth';
 
 const ForgotPassword = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -17,8 +17,8 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      setMessage(await requestPasswordReset(username));
-      setUsername('');
+      setMessage(await requestPasswordReset(email));
+      setEmail('');
     } catch (requestError) {
       if (axios.isAxiosError<{ message?: string | string[] }>(requestError)) {
         const responseMessage = requestError.response?.data?.message;
@@ -48,7 +48,7 @@ const ForgotPassword = () => {
             </p>
             <h1 className="text-2xl font-bold text-slate-950">Forgot password</h1>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Enter your username. A super admin will review the request and provide a temporary password.
+              Enter your account email. A super admin will review the request and provide a temporary password.
             </p>
           </div>
         </div>
@@ -66,11 +66,12 @@ const ForgotPassword = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Username</span>
+            <span className="text-sm font-semibold text-slate-700">Email</span>
             <input
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              autoComplete="username"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-slate-950 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
               required
             />

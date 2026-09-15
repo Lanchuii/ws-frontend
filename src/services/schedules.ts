@@ -1,7 +1,7 @@
 import { ScheduleAssignment, ScheduleSong, WorshipSchedule } from '../models/Schedule';
 import { ServiceTypeValue } from '../constants/serviceTypes';
 import { WorkerRole } from '../models/Worker';
-import { api, getApiBaseUrl } from './api';
+import { api } from './api';
 import axios from 'axios';
 
 const roleLabels = [
@@ -158,14 +158,45 @@ export interface MyAssignmentsResult {
   items: WorshipSchedule[];
 }
 
-export const fetchSchedules = async (): Promise<WorshipSchedule[]> => {
-  try {
-    const response = await api.get('/schedules');
-    return normalizeScheduleResponse(response.data);
-  } catch (error) {
-    const response = await api.get(`${getApiBaseUrl()}/schedule/`);
-    return normalizeScheduleResponse(response.data);
+export interface ScheduleListQuery {
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
+  status?: string;
+  service_type?: string;
+}
+
+export const fetchSchedules = async (
+  query: ScheduleListQuery = {},
+): Promise<WorshipSchedule[]> => {
+  const requestedPage = query.page;
+  const limit = query.limit ?? 100;
+  const firstPage = requestedPage ?? 1;
+  const response = await api.get('/schedules', {
+    params: { ...query, page: firstPage, limit },
+  });
+  const items = normalizeScheduleResponse(response.data);
+
+  if (requestedPage) return items;
+
+  const lastPage = getLastPage(response.data);
+  for (let page = 2; page <= lastPage; page += 1) {
+    const next = await api.get('/schedules', {
+      params: { ...query, page, limit },
+    });
+    items.push(...normalizeScheduleResponse(next.data));
   }
+
+  return items.sort((a, b) => a.date.localeCompare(b.date));
+};
+
+export const fetchScheduleSummary = async () => {
+  const response = await api.get('/schedules/summary');
+  return response.data.data as {
+    active_count: number;
+    upcoming_count: number;
+  };
 };
 
 export const fetchMyAssignments = async (): Promise<MyAssignmentsResult> => {
@@ -474,4 +505,15 @@ const getString = (record: Record<string, unknown>, key: string) => {
 const getArray = (record: Record<string, unknown>, key: string) => {
   const value = record[key];
   return Array.isArray(value) ? value : undefined;
+};
+
+const getLastPage = (payload: unknown) => {
+  const data = isRecord(payload) && isRecord(payload.data)
+    ? payload.data
+    : payload;
+  const pagination = isRecord(data) && isRecord(data.pagination)
+    ? data.pagination
+    : undefined;
+  const value = pagination?.last_page;
+  return typeof value === 'number' ? value : 1;
 };

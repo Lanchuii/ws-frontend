@@ -2,12 +2,14 @@ import { AuthSession } from '../models/Auth';
 
 const sessionKey = 'ws_auth_session';
 export const authSessionChangedEvent = 'ws-auth-session-changed';
+let memorySession: AuthSession | null = null;
 
 const notifySessionChanged = () => {
   window.dispatchEvent(new Event(authSessionChangedEvent));
 };
 
 export const getStoredSession = (): AuthSession | null => {
+  if (memorySession) return memorySession;
   const rawSession = localStorage.getItem(sessionKey);
 
   if (!rawSession) {
@@ -23,11 +25,13 @@ export const getStoredSession = (): AuthSession | null => {
 };
 
 export const setStoredSession = (session: AuthSession) => {
-  localStorage.setItem(sessionKey, JSON.stringify(session));
+  memorySession = { ...session, refreshToken: undefined };
+  localStorage.removeItem(sessionKey);
   notifySessionChanged();
 };
 
 export const clearStoredSession = () => {
+  memorySession = null;
   localStorage.removeItem(sessionKey);
   notifySessionChanged();
 };

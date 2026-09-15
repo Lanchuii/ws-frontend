@@ -1,27 +1,32 @@
-# React + TypeScript + Vite
+# Worship Scheduler Web App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18, TypeScript, Vite, and Tailwind frontend for worship schedules,
+workers, meetings, requests, lineups, and notifications.
 
-Currently, two official plugins are available:
+## Local setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Requires Node.js 20+. Copy `.env.example` to `.env.local`, then run:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
+```bash
+npm ci
+npm run dev
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+Authentication uses short-lived access tokens held in memory and a rotating
+HttpOnly refresh cookie. Existing local-storage sessions are read only for a
+one-time migration and are removed as soon as a new session is received.
+
+## Verification
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Vitest and Testing Library cover browser behavior and utilities. GitHub Actions
+runs all three checks for pushes and pull requests.
+
+Route-level code splitting keeps the initial application bundle small. Main
+editor dialogs support initial focus, focus trapping, Escape-to-close, and
+focus restoration.

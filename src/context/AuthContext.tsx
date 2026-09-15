@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { createContext, ReactNode, useEffect, useMemo, useState } from 'react';
 import { AuthSession, AuthUser, SignupResult } from '../models/Auth';
-import { login as loginRequest, refreshSession, resetPassword as resetPasswordRequest, signup as signupRequest, LoginPayload, SignupPayload } from '../services/auth';
+import { login as loginRequest, logout as logoutRequest, refreshSession, resetPassword as resetPasswordRequest, signup as signupRequest, LoginPayload, SignupPayload } from '../services/auth';
 import { authSessionChangedEvent, clearStoredSession, getStoredSession, setStoredSession } from '../services/tokenStorage';
 
 interface AuthContextValue {
@@ -9,32 +9,30 @@ interface AuthContextValue {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isAuthenticated: boolean;
+  isReady: boolean;
   login: (payload: LoginPayload) => Promise<AuthSession>;
   resetPassword: (password: string) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<SignupResult>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let active = true;
     const syncSession = () => setSession(getStoredSession());
     const syncSessionFromServer = () => {
       const current = getStoredSession();
-      if (!current?.refreshToken) {
-        return;
-      }
-
-      const expectedRefreshToken = current.refreshToken;
+      const expectedRefreshToken = current?.refreshToken;
       refreshSession(expectedRefreshToken)
         .then((nextSession) => {
           if (
             active &&
-            getStoredSession()?.refreshToken === expectedRefreshToken
+            (!expectedRefreshToken || getStoredSession()?.refreshToken === expectedRefreshToken)
           ) {
             setStoredSession(nextSession);
           }
@@ -44,10 +42,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             active &&
             axios.isAxiosError(error) &&
             error.response?.status === 401 &&
-            getStoredSession()?.refreshToken === expectedRefreshToken
+            (!expectedRefreshToken || getStoredSession()?.refreshToken === expectedRefreshToken)
           ) {
-            clearStoredSession();
+          clearStoredSession();
           }
+        })
+        .finally(() => {
+          if (active) setIsReady(true);
         });
     };
     window.addEventListener(authSessionChangedEvent, syncSession);
@@ -71,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return {
       user: session?.user ?? null,
+      isReady,
       isAdmin:
         session?.user.role === 'admin' ||
         session?.user.role === 'super_admin',
@@ -88,12 +90,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signup: async (payload) => {
         return await signupRequest(payload);
       },
-      logout: () => {
-        clearStoredSession();
-        setSession(null);
+      logout: async () => {
+        try {
+          await logoutRequest();
+        } finally {
+          clearStoredSession();
+          setSession(null);
+        }
       },
     };
-  }, [session]);
+  }, [isReady, session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

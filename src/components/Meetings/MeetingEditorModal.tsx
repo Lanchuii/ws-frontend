@@ -12,6 +12,7 @@ import { Meeting, MeetingAudienceMode, SaveMeetingPayload } from '../../models/M
 import { WorkerGroup } from '../../models/ServiceConfiguration';
 import { Worker } from '../../models/Worker';
 import { createMeeting, updateMeeting } from '../../services/meetings';
+import { useAccessibleDialog } from '../../hooks/useAccessibleDialog';
 
 interface Props {
   date: string;
@@ -84,6 +85,7 @@ const MeetingEditorModal = ({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const dialogProps = useAccessibleDialog(onClose);
 
   const reachableWorkers = useMemo(
     () =>
@@ -180,7 +182,7 @@ const MeetingEditorModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 sm:p-6">
-      <section className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[90vh]">
+      <section {...dialogProps} aria-label="Meeting editor" className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl bg-white shadow-xl sm:max-h-[90vh]">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 p-4 sm:p-5">
           <div className="min-w-0">
             <p className="text-sm font-bold uppercase text-violet-700">

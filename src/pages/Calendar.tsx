@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { FaBell, FaCalendarAlt, FaEdit, FaUsers } from 'react-icons/fa';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FaBell, FaCalendarAlt, FaEdit, FaRedo, FaUsers } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 import AutoGenerateScheduleModal from '../components/ScheduleDisplay/AutoGenerateScheduleModal';
 import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedulesModal';
@@ -32,6 +32,7 @@ import { Meeting } from '../models/Meeting';
 import {
   deleteMeeting,
   fetchMeetings,
+  retryMeetingReminder,
 } from '../services/meetings';
 import MeetingEditorModal from '../components/Meetings/MeetingEditorModal';
 
@@ -56,16 +57,17 @@ const Calendar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isAuthenticated, isAdmin } = useAuth();
+  const monthRange = useMemo(() => getMonthRange(monthDate), [monthDate]);
 
-  const loadSchedules = async () => {
-    const items = await fetchSchedules();
+  const loadSchedules = useCallback(async () => {
+    const items = await fetchSchedules({ ...monthRange, limit: 100 });
     setSchedules(items);
-  };
+  }, [monthRange]);
 
-  const loadMeetings = async () => {
-    const items = await fetchMeetings();
+  const loadMeetings = useCallback(async () => {
+    const items = await fetchMeetings(monthRange);
     setMeetings(items);
-  };
+  }, [monthRange]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -89,7 +91,7 @@ const Calendar = () => {
       })
       .catch(() => setError('Calendar events could not be loaded.'))
       .finally(() => setLoading(false));
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isAdmin, loadMeetings, loadSchedules]);
 
   useEffect(() => {
     const requestedDate = searchParams.get('date');
@@ -173,6 +175,16 @@ const Calendar = () => {
       setError('');
     } catch {
       setError('Meeting could not be deleted.');
+    }
+  };
+
+  const handleRetryReminder = async (meetingId: string, reminderId: string) => {
+    try {
+      await retryMeetingReminder(meetingId, reminderId);
+      await loadMeetings();
+      setError('');
+    } catch {
+      setError('The failed meeting reminder could not be queued again.');
     }
   };
 
@@ -286,6 +298,30 @@ const Calendar = () => {
                         : 'No reminders'}{' '}
                       · {formatMeetingAudience(meeting, workerGroups, workers)}
                     </p>
+                    {meeting.reminders.some((reminder) => reminder.status === 'failed') && (
+                      <div className="mt-3 space-y-2">
+                        {meeting.reminders
+                          .filter((reminder) => reminder.status === 'failed')
+                          .map((reminder) => (
+                            <div
+                              key={reminder.id}
+                              className="flex flex-wrap items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-xs text-red-800 ring-1 ring-red-200"
+                            >
+                              <span className="font-bold">Reminder failed</span>
+                              <span>{reminder.lastError || 'Delivery failed after repeated attempts.'}</span>
+                              {isAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRetryReminder(meeting.id, reminder.id)}
+                                  className="ml-auto inline-flex items-center gap-1 rounded bg-white px-2 py-1 font-bold ring-1 ring-red-200 hover:bg-red-100"
+                                >
+                                  <FaRedo aria-hidden="true" /> Retry
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </div>
                   {isAdmin && (
                     <div className="flex gap-2">
@@ -748,3 +784,8 @@ const formatMeetingAudience = (
 };
 
 export default Calendar;
+
+const getMonthRange = (date: Date) => ({
+  from: toDateKey(new Date(date.getFullYear(), date.getMonth(), 1)),
+  to: toDateKey(new Date(date.getFullYear(), date.getMonth() + 1, 1)),
+});
