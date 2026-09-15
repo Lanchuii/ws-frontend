@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   FaBars,
@@ -20,7 +20,7 @@ import { useAuth } from '../../context/useAuth';
 const mobileNavigationQuery = '(max-width: 1123px)';
 
 const Navbar = () => {
-  const { user, isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileViewport, setMobileViewport] = useState(() =>
     window.matchMedia(mobileNavigationQuery).matches,
@@ -87,13 +87,6 @@ const Navbar = () => {
         {isAuthenticated ? (
           <>
             {!mobile && !mobileViewport && <NotificationInbox />}
-            <span
-              className={`inline-flex items-center rounded-md bg-amber-50 px-3 py-2 text-sm font-bold capitalize text-amber-700 ${
-                mobile ? 'w-full' : ''
-              }`}
-            >
-              {formatRole(user?.role)}
-            </span>
             <NavLink to="/settings" className={getLinkClass} onClick={closeMenu}>
               <FaCog />
               Settings
@@ -119,11 +112,16 @@ const Navbar = () => {
     <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 shadow-sm sm:backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+          <Link
+            to="/"
+            onClick={() => setMenuOpen(false)}
+            className="flex min-w-0 items-center gap-3 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2"
+            aria-label="TLLCC Worship home"
+          >
             <img
               src={guitarIcon}
               alt=""
-              className="h-10 w-10 shrink-0 rounded-md bg-amber-50 p-2"
+              className="h-10 w-10 shrink-0"
             />
             <div className="min-w-0">
               <p className="truncate text-base font-bold text-slate-950">
@@ -133,7 +131,7 @@ const Navbar = () => {
                 Schedule tracker
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex shrink-0 items-center gap-1 lg:hidden">
             {isAuthenticated && mobileViewport && <NotificationInbox />}
@@ -165,14 +163,6 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
-
-const formatRole = (role?: string) => {
-  if (role === 'super_admin') {
-    return 'Super admin';
-  }
-
-  return role ?? '';
 };
 
 export default Navbar;
