@@ -306,6 +306,7 @@ const SwipeableNotification = ({
       >
         <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-amber-700">
           {notification.type === 'schedule_reminder' ||
+          notification.type === 'meeting_reminder' ||
           notification.type === 'schedule_updated' ? (
             <FaCalendarAlt />
           ) : notification.type.startsWith('lineup_') ? (

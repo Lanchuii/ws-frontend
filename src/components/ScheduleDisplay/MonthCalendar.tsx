@@ -1,11 +1,13 @@
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { findServiceTypeOption, ServiceTypeOption } from '../../constants/serviceTypes';
 import { WorshipSchedule } from '../../models/Schedule';
+import { Meeting } from '../../models/Meeting';
 import { formatMonthLabel, getMonthDays, toDateKey } from '../../utils/date';
 
 interface Props {
   monthDate: Date;
   schedules: WorshipSchedule[];
+  meetings: Meeting[];
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   onToday: () => void;
@@ -19,6 +21,7 @@ const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MonthCalendar = ({
   monthDate,
   schedules,
+  meetings,
   onPreviousMonth,
   onNextMonth,
   onToday,
@@ -30,6 +33,10 @@ const MonthCalendar = ({
   const schedulesByDate = schedules.reduce<Record<string, WorshipSchedule[]>>((acc, schedule) => {
     const key = toDateKey(schedule.date);
     acc[key] = [...(acc[key] ?? []), schedule];
+    return acc;
+  }, {});
+  const meetingsByDate = meetings.reduce<Record<string, Meeting[]>>((acc, meeting) => {
+    acc[meeting.date] = [...(acc[meeting.date] ?? []), meeting];
     return acc;
   }, {});
   const todayKey = toDateKey(new Date());
@@ -78,6 +85,22 @@ const MonthCalendar = ({
         {days.map((day, index) => {
           const dateKey = day ? toDateKey(day) : '';
           const daySchedules = schedulesByDate[dateKey] ?? [];
+          const dayMeetings = meetingsByDate[dateKey] ?? [];
+          const totalEvents = daySchedules.length + dayMeetings.length;
+          const visibleMeetings = dayMeetings.slice(0, 1);
+          const mobileEventLimit = totalEvents > 3 ? 2 : 3;
+          const mobileSchedules = daySchedules.slice(
+            0,
+            Math.max(0, mobileEventLimit - visibleMeetings.length),
+          );
+          const mobileHiddenCount =
+            totalEvents - visibleMeetings.length - mobileSchedules.length;
+          const desktopSchedules = daySchedules.slice(
+            0,
+            Math.max(0, 2 - visibleMeetings.length),
+          );
+          const desktopHiddenCount =
+            totalEvents - visibleMeetings.length - desktopSchedules.length;
           const isToday = dateKey === todayKey;
           const isSunday = day?.getDay() === 0;
 
@@ -87,7 +110,7 @@ const MonthCalendar = ({
               key={`${dateKey || 'blank'}-${index}`}
               disabled={!day}
               onClick={() => day && onSelectDate(dateKey)}
-              aria-label={day ? getCalendarDayLabel(day, daySchedules, serviceTypes) : undefined}
+              aria-label={day ? getCalendarDayLabel(day, daySchedules, dayMeetings, serviceTypes) : undefined}
               className={`flex aspect-square flex-col items-start border-b border-r border-slate-200 p-1 text-left sm:block sm:aspect-auto sm:min-h-[116px] sm:p-2 ${
                 day ? 'bg-white' : 'bg-slate-50'
               } ${dateKey === selectedDateKey ? 'sm:ring-2 sm:ring-inset sm:ring-amber-500' : ''}`}
@@ -109,9 +132,16 @@ const MonthCalendar = ({
                   </div>
 
                   <div className="mt-auto flex justify-start -space-x-1 sm:hidden">
-                    {daySchedules
-                      .slice(0, daySchedules.length > 3 ? 2 : 3)
-                      .map((schedule) => {
+                    {visibleMeetings.map((meeting) => (
+                      <span
+                        key={meeting.id}
+                        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-violet-100 text-[9px] font-black text-violet-800 ring-1 ring-white"
+                        title={`Meeting: ${meeting.title}`}
+                      >
+                        M
+                      </span>
+                    ))}
+                    {mobileSchedules.map((schedule) => {
                         const serviceType = findServiceTypeOption(
                           schedule.serviceType,
                           serviceTypes,
@@ -127,15 +157,24 @@ const MonthCalendar = ({
                           </span>
                         );
                       })}
-                    {daySchedules.length > 3 && (
+                    {mobileHiddenCount > 0 && (
                       <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-200 px-0.5 text-[8px] font-bold text-slate-600 ring-1 ring-white">
-                        +{daySchedules.length - 2}
+                        +{mobileHiddenCount}
                       </span>
                     )}
                   </div>
 
                   <div className="mt-2 hidden space-y-1 sm:block">
-                    {daySchedules.slice(0, 2).map((schedule) => (
+                    {visibleMeetings.map((meeting) => (
+                      <div
+                        key={meeting.id}
+                        className="rounded-md bg-violet-100 px-2 py-1 text-xs font-semibold text-violet-800"
+                        title={`Meeting: ${meeting.title}`}
+                      >
+                        <span className="block truncate">Meeting: {meeting.title}</span>
+                      </div>
+                    ))}
+                    {desktopSchedules.map((schedule) => (
                       <div
                         key={schedule.id}
                         className={`rounded-md px-2 py-1 text-xs font-semibold ${findServiceTypeOption(schedule.serviceType, serviceTypes).badgeClassName}`}
@@ -146,9 +185,9 @@ const MonthCalendar = ({
                         </span>
                       </div>
                     ))}
-                    {daySchedules.length > 2 && (
+                    {desktopHiddenCount > 0 && (
                       <p className="text-xs font-medium text-slate-500">
-                        +{daySchedules.length - 2} more
+                        +{desktopHiddenCount} more
                       </p>
                     )}
                   </div>
@@ -181,6 +220,7 @@ const getServiceInitial = (serviceType: ServiceTypeOption) => {
 const getCalendarDayLabel = (
   day: Date,
   schedules: WorshipSchedule[],
+  meetings: Meeting[],
   serviceTypes: ServiceTypeOption[],
 ) => {
   const dateLabel = new Intl.DateTimeFormat('en', {
@@ -189,10 +229,12 @@ const getCalendarDayLabel = (
     year: 'numeric',
   }).format(day);
 
-  if (!schedules.length) return dateLabel;
+  if (!schedules.length && !meetings.length) return dateLabel;
 
-  return `${dateLabel}: ${schedules
-    .map((schedule) => getScheduleCalendarLabel(schedule, serviceTypes))
+  return `${dateLabel}: ${[
+    ...meetings.map((meeting) => `Meeting: ${meeting.title}`),
+    ...schedules.map((schedule) => getScheduleCalendarLabel(schedule, serviceTypes)),
+  ]
     .join(', ')}`;
 };
 

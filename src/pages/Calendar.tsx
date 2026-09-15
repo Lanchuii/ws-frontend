@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaBell, FaEdit, FaUsers } from 'react-icons/fa';
+import { FaBell, FaCalendarAlt, FaEdit, FaUsers } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 import AutoGenerateScheduleModal from '../components/ScheduleDisplay/AutoGenerateScheduleModal';
 import BulkEditSchedulesModal from '../components/ScheduleDisplay/BulkEditSchedulesModal';
@@ -28,10 +28,17 @@ import {
 } from '../services/serviceConfiguration';
 import { getAssignmentsForSlot } from '../utils/serviceRules';
 import { formatLongDate, toDateKey } from '../utils/date';
+import { Meeting } from '../models/Meeting';
+import {
+  deleteMeeting,
+  fetchMeetings,
+} from '../services/meetings';
+import MeetingEditorModal from '../components/Meetings/MeetingEditorModal';
 
 const Calendar = () => {
   const [searchParams] = useSearchParams();
   const [schedules, setSchedules] = useState<WorshipSchedule[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [monthDate, setMonthDate] = useState(() => new Date());
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [serviceTypeConfigs, setServiceTypeConfigs] = useState<ServiceTypeConfiguration[]>([]);
@@ -42,8 +49,10 @@ const Calendar = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [showAutoGenerator, setShowAutoGenerator] = useState(false);
   const [showReminders, setShowReminders] = useState(false);
+  const [showMeetingEditor, setShowMeetingEditor] = useState(false);
   const [bulkEditingServiceType, setBulkEditingServiceType] = useState<ServiceTypeConfiguration>();
   const [editingSchedule, setEditingSchedule] = useState<WorshipSchedule | undefined>();
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { isAuthenticated, isAdmin } = useAuth();
@@ -51,6 +60,11 @@ const Calendar = () => {
   const loadSchedules = async () => {
     const items = await fetchSchedules();
     setSchedules(items);
+  };
+
+  const loadMeetings = async () => {
+    const items = await fetchMeetings();
+    setMeetings(items);
   };
 
   useEffect(() => {
@@ -62,19 +76,28 @@ const Calendar = () => {
     setLoading(true);
     Promise.all([
       loadSchedules(),
+      loadMeetings(),
       isAdmin ? fetchWorkers('active') : Promise.resolve([]),
       fetchServiceTypes(),
       fetchWorkerGroups(),
     ])
-      .then(([, activeWorkers, configuredServiceTypes, configuredWorkerGroups]) => {
+      .then(([, , activeWorkers, configuredServiceTypes, configuredWorkerGroups]) => {
         setWorkers(activeWorkers);
         setServiceTypeConfigs(configuredServiceTypes);
         setWorkerGroups(configuredWorkerGroups);
         setError('');
       })
-      .catch(() => setError('Schedules could not be loaded.'))
+      .catch(() => setError('Calendar events could not be loaded.'))
       .finally(() => setLoading(false));
   }, [isAuthenticated, isAdmin]);
+
+  useEffect(() => {
+    const requestedDate = searchParams.get('date');
+    if (!requestedDate || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) return;
+    const [year, month] = requestedDate.split('-').map(Number);
+    setSelectedDateKey(requestedDate);
+    setMonthDate(new Date(year, month - 1, 1));
+  }, [searchParams]);
   const serviceTypeOptions = useMemo(
     () => toServiceTypeOptions(serviceTypeConfigs),
     [serviceTypeConfigs],
@@ -90,8 +113,15 @@ const Calendar = () => {
       );
     });
   }, [monthDate, schedules]);
+  const selectedMonthMeetings = useMemo(() => {
+    return meetings.filter((meeting) => {
+      const [year, month] = meeting.date.split('-').map(Number);
+      return year === monthDate.getFullYear() && month === monthDate.getMonth() + 1;
+    });
+  }, [meetings, monthDate]);
   const todaySchedule = schedules.find((schedule) => schedule.date === toDateKey(new Date()));
   const selectedDateSchedules = schedules.filter((schedule) => schedule.date === selectedDateKey);
+  const selectedDateMeetings = meetings.filter((meeting) => meeting.date === selectedDateKey);
 
   const changeMonth = (amount: number) => {
     setMonthDate((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
@@ -124,6 +154,28 @@ const Calendar = () => {
     setShowEditor(true);
   };
 
+  const openCreateMeeting = () => {
+    setEditingMeeting(undefined);
+    setShowMeetingEditor(true);
+  };
+
+  const openEditMeeting = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
+    setShowMeetingEditor(true);
+  };
+
+  const handleDeleteMeeting = async (meeting: Meeting) => {
+    if (!window.confirm(`Delete “${meeting.title}” on ${meeting.date}?`)) return;
+
+    try {
+      await deleteMeeting(meeting.id);
+      await loadMeetings();
+      setError('');
+    } catch {
+      setError('Meeting could not be deleted.');
+    }
+  };
+
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -131,9 +183,9 @@ const Calendar = () => {
           <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">
             Calendar
           </p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-950">Monthly worship schedule</h1>
+          <h1 className="mt-1 text-3xl font-bold text-slate-950">Worship team calendar</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Scan all service schedules and worker assignments in one place.
+            Scan service schedules, worker assignments, and team meetings in one place.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -156,7 +208,8 @@ const Calendar = () => {
             </button>
           )}
           <div className="rounded-md bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
-            {selectedMonthSchedules.length} service{selectedMonthSchedules.length === 1 ? '' : 's'} this month
+            {selectedMonthSchedules.length} service{selectedMonthSchedules.length === 1 ? '' : 's'} ·{' '}
+            {selectedMonthMeetings.length} meeting{selectedMonthMeetings.length === 1 ? '' : 's'}
           </div>
         </div>
       </div>
@@ -179,6 +232,7 @@ const Calendar = () => {
         <MonthCalendar
           monthDate={monthDate}
           schedules={schedules}
+          meetings={meetings}
           onPreviousMonth={() => changeMonth(-1)}
           onNextMonth={() => changeMonth(1)}
           onToday={() => setMonthDate(new Date())}
@@ -199,6 +253,13 @@ const Calendar = () => {
               <div className="flex flex-wrap justify-end gap-2">
                 <button
                   type="button"
+                  onClick={openCreateMeeting}
+                  className="rounded-md bg-violet-700 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-800"
+                >
+                  Create meeting
+                </button>
+                <button
+                  type="button"
                   onClick={openCreateSchedule}
                   className="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                 >
@@ -207,6 +268,46 @@ const Calendar = () => {
               </div>
             )}
           </div>
+          {selectedDateMeetings.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {selectedDateMeetings.map((meeting) => (
+                <article
+                  key={meeting.id}
+                  className="flex flex-col gap-3 rounded-lg border border-violet-200 bg-violet-50 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-violet-700">
+                      <FaCalendarAlt /> Team meeting
+                    </p>
+                    <h3 className="mt-1 font-bold text-slate-950">{meeting.title}</h3>
+                    <p className="mt-1 text-xs font-medium text-slate-600">
+                      {meeting.reminders.length
+                        ? `${meeting.reminders.length} reminder${meeting.reminders.length === 1 ? '' : 's'}`
+                        : 'No reminders'}
+                    </p>
+                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEditMeeting(meeting)}
+                        className="rounded-md bg-white px-3 py-2 text-xs font-bold text-violet-800 ring-1 ring-violet-200 hover:bg-violet-100"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteMeeting(meeting)}
+                        className="rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          )}
           {selectedDateSchedules.length > 0 ? (
             <div className="mt-4">
               <SelectedDateScheduleTable
@@ -269,7 +370,9 @@ const Calendar = () => {
               </div>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-slate-600">No service is scheduled for this date.</p>
+            <p className="mt-3 text-sm text-slate-600">
+              No service is scheduled for this date.
+            </p>
           )}
         </div>
       </section>
@@ -332,6 +435,15 @@ const Calendar = () => {
 
       {showReminders && isAdmin && (
         <ScheduleReminderModal onClose={() => setShowReminders(false)} />
+      )}
+
+      {showMeetingEditor && isAdmin && (
+        <MeetingEditorModal
+          date={editingMeeting?.date ?? selectedDateKey}
+          meeting={editingMeeting}
+          onClose={() => setShowMeetingEditor(false)}
+          onSaved={loadMeetings}
+        />
       )}
 
       {bulkEditingServiceType && isAdmin && (
