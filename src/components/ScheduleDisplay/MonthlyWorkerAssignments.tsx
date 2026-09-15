@@ -4,6 +4,7 @@ import { formatMonthLabel } from '../../utils/date';
 interface Props {
   monthDate: Date;
   schedules: WorshipSchedule[];
+  emptyMessage?: string;
 }
 
 interface WorkerAssignmentSummary {
@@ -15,6 +16,7 @@ interface WorkerAssignmentSummary {
 const MonthlyWorkerAssignments = ({
   monthDate,
   schedules,
+  emptyMessage = 'No workers are assigned to this service this month.',
 }: Props) => {
   const summaries = buildWorkerAssignmentSummaries(schedules);
 
@@ -51,7 +53,7 @@ const MonthlyWorkerAssignments = ({
         </div>
       ) : (
         <p className="rounded-md border border-dashed border-slate-300 bg-white px-4 py-5 text-center text-sm text-slate-600">
-          No workers are assigned to this service this month.
+          {emptyMessage}
         </p>
       )}
     </section>

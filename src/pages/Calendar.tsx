@@ -50,6 +50,7 @@ const Calendar = () => {
   const [showEditor, setShowEditor] = useState(false);
   const [showAutoGenerator, setShowAutoGenerator] = useState(false);
   const [showReminders, setShowReminders] = useState(false);
+  const [showMonthlyAssignments, setShowMonthlyAssignments] = useState(false);
   const [showMeetingEditor, setShowMeetingEditor] = useState(false);
   const [bulkEditingServiceType, setBulkEditingServiceType] = useState<ServiceTypeConfiguration>();
   const [editingSchedule, setEditingSchedule] = useState<WorshipSchedule | undefined>();
@@ -204,6 +205,17 @@ const Calendar = () => {
           {isAdmin && (
             <button
               type="button"
+              onClick={() => setShowMonthlyAssignments((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-950"
+              aria-expanded={showMonthlyAssignments}
+              aria-controls="monthly-worker-assignment-totals"
+            >
+              <FaUsers aria-hidden="true" /> Worker totals
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              type="button"
               onClick={() => setShowReminders(true)}
               className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
             >
@@ -225,6 +237,19 @@ const Calendar = () => {
           </div>
         </div>
       </div>
+
+      {isAdmin && showMonthlyAssignments && (
+        <div
+          id="monthly-worker-assignment-totals"
+          className="mb-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+        >
+          <MonthlyWorkerAssignments
+            monthDate={monthDate}
+            schedules={selectedMonthSchedules}
+            emptyMessage="No workers are assigned this month."
+          />
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
