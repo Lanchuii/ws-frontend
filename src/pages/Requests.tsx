@@ -41,7 +41,7 @@ import {
   PasswordResetRequest,
   rejectPasswordResetRequest,
 } from '../services/users';
-import { formatLongDate, toDateKey } from '../utils/date';
+import { formatLongDate, formatShortDate, toDateKey } from '../utils/date';
 
 const Requests = () => {
   const { user, isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
@@ -716,15 +716,51 @@ const UnavailableDatesPanel = ({ records, workers, busyId, onRemove }: {
   onRemove: (record: WorkerUnavailability) => void;
 }) => {
   const names = new Map(workers.map((worker) => [worker._id, worker.name]));
+  const today = toDateKey(new Date());
+  const upcomingRecords = records.filter((record) => toDateKey(record.date) >= today);
+
   return (
     <section className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-200 px-5 py-4"><h2 className="text-xl font-bold text-slate-950">Approved unavailable dates</h2></div>
-      {records.length ? <div className="divide-y divide-slate-200">{records.map((record) => (
-        <div key={record._id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="font-bold text-slate-950">{names.get(record.worker_id) ?? 'Worker'}</p><p className="text-sm text-slate-600">{formatLongDate(record.date)}{record.reason ? ` - ${record.reason}` : ''}</p></div>
-          <button type="button" disabled={busyId === record._id} onClick={() => onRemove(record)} className="inline-flex items-center justify-center gap-2 rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"><FaTimes /> Remove</button>
+      {upcomingRecords.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <tr>
+                <th scope="col" className="w-[30%] px-4 py-2.5 sm:w-1/4 sm:px-5">Worker</th>
+                <th scope="col" className="w-[38%] px-2 py-2.5 sm:w-1/4 sm:px-4">Date</th>
+                <th scope="col" className="hidden px-4 py-2.5 sm:table-cell">Reason</th>
+                <th scope="col" className="w-12 px-2 py-2.5 sm:w-28 sm:px-4"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {upcomingRecords.map((record) => (
+                <tr key={record._id}>
+                  <th scope="row" className="px-4 py-3 font-semibold text-slate-950 sm:px-5">
+                    {names.get(record.worker_id) ?? 'Worker'}
+                    {record.reason && <span className="mt-0.5 block truncate text-xs font-normal text-slate-500 sm:hidden">{record.reason}</span>}
+                  </th>
+                  <td className="px-2 py-3 text-slate-700 sm:px-4">{formatShortDate(record.date)}</td>
+                  <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{record.reason || '—'}</td>
+                  <td className="px-2 py-3 text-right sm:px-4">
+                    <button
+                      type="button"
+                      aria-label={`Remove ${names.get(record.worker_id) ?? 'worker'}'s unavailable date on ${formatShortDate(record.date)}`}
+                      title="Remove unavailable date"
+                      disabled={busyId === record._id}
+                      onClick={() => onRemove(record)}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:gap-2 sm:border sm:border-red-200 sm:px-3"
+                    >
+                      <FaTimes aria-hidden="true" />
+                      <span className="hidden sm:inline">Remove</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}</div> : <p className="px-5 py-8 text-sm text-slate-600">No active unavailable dates.</p>}
+      ) : <p className="px-5 py-8 text-sm text-slate-600">No upcoming unavailable dates.</p>}
     </section>
   );
 };

@@ -10,6 +10,17 @@ export const formatLongDate = (dateValue: string | Date) => {
   }).format(new Date(year, month - 1, day));
 };
 
+export const formatShortDate = (dateValue: string | Date) => {
+  const dateKey = toDateKey(dateValue);
+  const [year, month, day] = dateKey.split('-').map(Number);
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(year, month - 1, day));
+};
+
 export const formatMonthLabel = (date: Date) => {
   return new Intl.DateTimeFormat('en-US', {
     month: 'long',
