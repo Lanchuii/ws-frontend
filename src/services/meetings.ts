@@ -52,6 +52,19 @@ const normalizeMeeting = (value: unknown): Meeting | null => {
           sentAt: getString(reminder, 'sent_at'),
         }))
       : [],
+    audience: normalizeAudience(value.audience),
+  };
+};
+
+const normalizeAudience = (value: unknown): Meeting['audience'] => {
+  if (!isRecord(value)) {
+    return { mode: 'all_active', workerGroupIds: [], workerIds: [] };
+  }
+  const mode = getString(value, 'mode');
+  return {
+    mode: mode === 'groups' || mode === 'workers' ? mode : 'all_active',
+    workerGroupIds: getStringArray(value, 'worker_group_ids'),
+    workerIds: getStringArray(value, 'worker_ids'),
   };
 };
 
@@ -79,4 +92,10 @@ const getString = (value: Record<string, unknown>, key: string) => {
 
 const getNumber = (value: Record<string, unknown>, key: string) => {
   return typeof value[key] === 'number' ? value[key] as number : undefined;
+};
+
+const getStringArray = (value: Record<string, unknown>, key: string) => {
+  return Array.isArray(value[key])
+    ? value[key].filter((item): item is string => typeof item === 'string')
+    : [];
 };

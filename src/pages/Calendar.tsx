@@ -283,7 +283,8 @@ const Calendar = () => {
                     <p className="mt-1 text-xs font-medium text-slate-600">
                       {meeting.reminders.length
                         ? `${meeting.reminders.length} reminder${meeting.reminders.length === 1 ? '' : 's'}`
-                        : 'No reminders'}
+                        : 'No reminders'}{' '}
+                      · {formatMeetingAudience(meeting, workerGroups, workers)}
                     </p>
                   </div>
                   {isAdmin && (
@@ -441,6 +442,8 @@ const Calendar = () => {
         <MeetingEditorModal
           date={editingMeeting?.date ?? selectedDateKey}
           meeting={editingMeeting}
+          workers={workers}
+          workerGroups={workerGroups}
           onClose={() => setShowMeetingEditor(false)}
           onSaved={loadMeetings}
         />
@@ -722,6 +725,26 @@ const formatScheduleSummaryDate = (dateValue: string) => {
     month: 'short',
     day: 'numeric',
   }).format(new Date(year, month - 1, day));
+};
+
+const formatMeetingAudience = (
+  meeting: Meeting,
+  workerGroups: WorkerGroup[],
+  workers: Worker[],
+) => {
+  if (meeting.audience.mode === 'groups') {
+    const names = meeting.audience.workerGroupIds
+      .map((id) => workerGroups.find((group) => group._id === id)?.name)
+      .filter(Boolean);
+    return names.length ? names.join(', ') : 'Selected groups';
+  }
+  if (meeting.audience.mode === 'workers') {
+    const names = meeting.audience.workerIds
+      .map((id) => workers.find((worker) => worker._id === id)?.name)
+      .filter(Boolean);
+    return names.length ? names.join(', ') : 'Selected workers';
+  }
+  return 'All active workers';
 };
 
 export default Calendar;

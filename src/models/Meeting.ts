@@ -1,4 +1,11 @@
 export type MeetingReminderStatus = 'pending' | 'processing' | 'sent';
+export type MeetingAudienceMode = 'all_active' | 'groups' | 'workers';
+
+export interface MeetingAudience {
+  mode: MeetingAudienceMode;
+  workerGroupIds: string[];
+  workerIds: string[];
+}
 
 export interface MeetingReminder {
   id: string;
@@ -14,6 +21,7 @@ export interface Meeting {
   title: string;
   date: string;
   reminders: MeetingReminder[];
+  audience: MeetingAudience;
 }
 
 export interface SaveMeetingPayload {
@@ -23,4 +31,9 @@ export interface SaveMeetingPayload {
     days_before: number;
     time: string;
   }>;
+  audience: {
+    mode: MeetingAudienceMode;
+    worker_group_ids: string[];
+    worker_ids: string[];
+  };
 }
