@@ -1,6 +1,5 @@
-import axios from 'axios';
 import { AuthSession, SignupResult } from '../models/Auth';
-import { api, ensureCsrfToken, getApiBaseUrl } from './api';
+import { api, refreshStoredSession } from './api';
 
 export interface LoginPayload {
   login: string;
@@ -33,16 +32,7 @@ export const requestPasswordReset = async (
 export const refreshSession = async (
   refreshToken?: string,
 ): Promise<AuthSession> => {
-  const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
-  const response = await axios.post(
-    `${getApiBaseUrl()}/auth/refresh`,
-    refreshToken ? { refreshToken } : {},
-    {
-      withCredentials: true,
-      headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
-    },
-  );
-  return response.data.data;
+  return await refreshStoredSession(refreshToken);
 };
 
 export const logout = async () => {

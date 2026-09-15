@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import type { AuthSession } from '../models/Auth';
 import {
   clearStoredSession,
   getAccessToken,
@@ -22,7 +23,7 @@ export const api = axios.create({
   withCredentials: true,
 });
 
-let refreshPromise: Promise<ReturnType<typeof getStoredSession>> | null = null;
+let refreshPromise: Promise<AuthSession> | null = null;
 let csrfPromise: Promise<string> | null = null;
 
 const getCsrfToken = () => {
@@ -43,6 +44,36 @@ export const ensureCsrfToken = async () => {
       csrfPromise = null;
     });
   return await csrfPromise;
+};
+
+const performSessionRefresh = async (
+  refreshToken?: string,
+): Promise<AuthSession> => {
+  const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
+  const response = await axios.post(
+    `${getApiBaseUrl()}/auth/refresh`,
+    refreshToken ? { refreshToken } : {},
+    {
+      withCredentials: true,
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
+    },
+  );
+  const currentSession = getStoredSession();
+  const nextSession = {
+    ...response.data.data,
+    user: response.data.data.user ?? currentSession?.user,
+  } as AuthSession;
+  setStoredSession(nextSession);
+  return nextSession;
+};
+
+export const refreshStoredSession = (
+  refreshToken = getRefreshToken(),
+): Promise<AuthSession> => {
+  refreshPromise ??= performSessionRefresh(refreshToken).finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
 };
 
 api.interceptors.request.use((config) => {
@@ -84,32 +115,9 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = getRefreshToken();
-
     try {
       originalRequest._retry = true;
-      const csrfToken = refreshToken ? undefined : await ensureCsrfToken();
-      refreshPromise ??= axios.post(
-        `${getApiBaseUrl()}/auth/refresh`,
-        refreshToken ? { refreshToken } : {},
-        {
-          withCredentials: true,
-          headers: csrfToken ? { 'x-csrf-token': csrfToken } : undefined,
-        },
-      ).then((response) => {
-        const currentSession = getStoredSession();
-        const nextSession = {
-          ...response.data.data,
-          user: response.data.data.user ?? currentSession?.user,
-        };
-        setStoredSession(nextSession);
-        return nextSession;
-      }).finally(() => {
-        refreshPromise = null;
-      });
-      const nextSession = await refreshPromise;
-
-      if (!nextSession) throw new Error('Session refresh failed');
+      const nextSession = await refreshStoredSession();
       originalRequest.headers.Authorization = `Bearer ${nextSession.accessToken}`;
 
       return api(originalRequest);
