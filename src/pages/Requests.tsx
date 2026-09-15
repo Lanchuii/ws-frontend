@@ -698,13 +698,10 @@ const AdminReviewPanel = ({ requests, status, busyId, onStatusChange, onApprove,
           <RequestDescription request={request} />
           <div>
             <input value={notes[request._id] ?? ''} onChange={(event) => setNotes((items) => ({ ...items, [request._id]: event.target.value }))} placeholder="Review note (optional)" className={inputClass} />
-            {(request.status === 'pending' && request.type !== 'swap') ||
-            (request.status === 'pending' && request.target_response === 'accepted') ? <div className="mt-2 flex justify-end gap-2">
+            {request.status === 'pending' ? <div className="mt-2 flex justify-end gap-2">
               <button type="button" disabled={busyId === request._id} onClick={() => onReject(request, notes[request._id])} className="inline-flex items-center gap-2 rounded-md border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"><FaTimes /> Reject</button>
               <button type="button" disabled={busyId === request._id} onClick={() => onApprove(request, notes[request._id])} className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><FaCheck /> Approve</button>
-            </div> : request.status === 'pending' && request.type === 'swap' ? (
-              <p className="mt-2 text-right text-xs font-bold uppercase text-amber-700">Awaiting target consent</p>
-            ) : null}
+            </div> : null}
           </div>
         </article>
       ))}</div> : <p className="px-5 py-8 text-sm text-slate-600">No requests match this filter.</p>}
@@ -740,13 +737,24 @@ const RequestDescription = ({ request }: { request: WorkerRequest }) => {
   return <div>
     <p className="font-bold text-slate-950">{source ? `${formatLongDate(source.schedule_date)} - ${source.service_type} - ${source.role}` : 'Schedule swap'}</p>
     <p className="mt-1 text-sm text-slate-600">{request.swap_mode === 'exchange' && request.target_assignment ? `Exchange with ${request.target_assignment.worker_name} on ${formatLongDate(request.target_assignment.schedule_date)}` : `Replacement: ${request.target_worker_name ?? '-'}`}</p>
-    {request.target_response && (
-      <p className="mt-1 text-xs font-bold uppercase text-slate-500">
-        Target response: {request.target_response}
-      </p>
-    )}
+    <SwapAcknowledgmentFlag response={request.target_response} />
     <RequestNotes request={request} />
   </div>;
+};
+
+const SwapAcknowledgmentFlag = ({ response }: {
+  response?: WorkerRequest['target_response'];
+}) => {
+  const acknowledged = response === 'accepted' || response === 'declined';
+  return (
+    <p className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase ring-1 ${
+      acknowledged
+        ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+        : 'bg-amber-50 text-amber-700 ring-amber-200'
+    }`}>
+      Swapee acknowledged: {acknowledged ? `Yes (${response})` : 'No'}
+    </p>
+  );
 };
 
 const RequestNotes = ({ request }: { request: WorkerRequest }) => (
