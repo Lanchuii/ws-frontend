@@ -10,6 +10,7 @@ const Calendar = lazy(() => import('./pages/Calendar'))
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
 const Workers = lazy(() => import('./pages/Workers'))
+const Songs = lazy(() => import('./pages/Songs'))
 const Users = lazy(() => import('./pages/Users'))
 const Services = lazy(() => import('./pages/Services'))
 const Requests = lazy(() => import('./pages/Requests'))
@@ -78,6 +79,7 @@ function App() {
             <Route path='/signup' element={<Navigate to='/' replace />} />
             <Route path='/forgot-password' element={<Navigate to='/' replace />} />
             <Route path='/workers' element={<Workers />} />
+            <Route path='/songs' element={<Songs />} />
             <Route path='/users' element={<Users />} />
             <Route path='/services' element={<Services />} />
             <Route path='/requests' element={<Requests />} />

@@ -237,7 +237,7 @@ const LeaderSongsEditorModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section role="dialog" aria-modal="true" aria-label="Leader song editor" className="flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Leader song editor" className="song-dialog flex max-h-full w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase text-amber-700">
@@ -338,7 +338,7 @@ const LeaderSongsEditorModal = ({
                                 type="button"
                                 onClick={() => void handleRemove(item)}
                                 disabled={busy}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-red-600 hover:bg-red-50 disabled:opacity-40"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-red-700 hover:bg-red-50 disabled:opacity-40"
                                 aria-label={`Remove ${item.song.title}`}
                               >
                                 <FaTrash />
@@ -394,6 +394,7 @@ const LeaderSongsEditorModal = ({
                 <button
                   type="button"
                   onClick={() => setMode('catalog')}
+                  aria-pressed={mode === 'catalog'}
                   className={`rounded px-3 py-1.5 text-sm font-semibold ${
                     mode === 'catalog'
                       ? 'bg-slate-950 text-white'
@@ -405,6 +406,7 @@ const LeaderSongsEditorModal = ({
                 <button
                   type="button"
                   onClick={() => setMode('new')}
+                  aria-pressed={mode === 'new'}
                   className={`rounded px-3 py-1.5 text-sm font-semibold ${
                     mode === 'new'
                       ? 'bg-slate-950 text-white'
@@ -446,6 +448,7 @@ const LeaderSongsEditorModal = ({
                           key={song._id}
                           type="button"
                           onClick={() => setSelectedSong(song)}
+                          aria-pressed={selectedSong?._id === song._id}
                           className={`flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left last:border-0 ${
                             selectedSong?._id === song._id
                               ? 'bg-amber-50'

@@ -5,6 +5,7 @@ import {
   FaCalendarAlt,
   FaExchangeAlt,
   FaHome,
+  FaMusic,
   FaSignInAlt,
   FaCog,
   FaSlidersH,
@@ -17,7 +18,7 @@ import guitarIcon from '../../assets/guitar-svgrepo-com.svg';
 import NotificationInbox from '../Notifications/NotificationInbox';
 import { useAuth } from '../../context/useAuth';
 
-const mobileNavigationQuery = '(max-width: 1123px)';
+const mobileNavigationQuery = '(max-width: 1299px)';
 
 const Navbar = () => {
   const { isAuthenticated, isAdmin, isSuperAdmin } = useAuth();
@@ -66,6 +67,12 @@ const Navbar = () => {
           <FaUsers />
           Workers
         </NavLink>
+        {isAuthenticated && (
+          <NavLink to="/songs" className={getLinkClass} onClick={closeMenu}>
+            <FaMusic />
+            Songs
+          </NavLink>
+        )}
         {isAuthenticated && (
           <NavLink to="/requests" className={getLinkClass} onClick={closeMenu}>
             <FaExchangeAlt />
@@ -133,7 +140,7 @@ const Navbar = () => {
             </div>
           </Link>
 
-          <div className="flex shrink-0 items-center gap-1 lg:hidden">
+          <div className="flex shrink-0 items-center gap-1 xl:hidden">
             {isAuthenticated && mobileViewport && <NotificationInbox />}
             <button
               type="button"
@@ -147,7 +154,7 @@ const Navbar = () => {
             </button>
           </div>
 
-          <div className="hidden flex-wrap items-center justify-end gap-2 lg:flex">
+          <div className="hidden flex-wrap items-center justify-end gap-2 xl:flex">
             {navigationItems()}
           </div>
         </div>
@@ -155,7 +162,7 @@ const Navbar = () => {
         {menuOpen && (
           <div
             id="mobile-navigation"
-            className="mt-3 grid gap-1 border-t border-slate-200 pt-3 lg:hidden"
+            className="mt-3 grid gap-1 border-t border-slate-200 pt-3 xl:hidden"
           >
             {navigationItems(true)}
           </div>

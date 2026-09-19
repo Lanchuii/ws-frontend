@@ -193,3 +193,32 @@ html.dark select,
 html.dark textarea {
   color-scheme: dark;
 }
+
+/* Song dialogs use explicit surfaces instead of browser-default form colors. */
+.song-dialog input:not([type='checkbox']) {
+  background-color: white;
+}
+
+html.dark .song-dialog {
+  background-color: rgb(15 25 43);
+}
+
+html.dark .song-dialog input:not([type='checkbox']) {
+  background-color: rgb(23 34 53);
+  color: rgb(241 245 249);
+}
+
+html.dark .song-dialog input::placeholder {
+  color: rgb(150 165 187);
+  opacity: 1;
+}
+
+/* Give primary actions and the active mode tab a clear, neutral contrast. */
+html.dark .song-dialog .bg-slate-950 {
+  background-color: rgb(218 226 237);
+  color: rgb(15 25 43);
+}
+
+html.dark .song-dialog .bg-slate-950:hover {
+  background-color: rgb(241 245 249);
+}

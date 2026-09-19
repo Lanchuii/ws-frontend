@@ -1,6 +1,24 @@
 import { PaginatedResult, Song } from '../models/Song';
 import { api } from './api';
 
+export type SaveSongPayload = Pick<
+  Song,
+  'title' | 'artist' | 'spotify_url' | 'is_active'
+>;
+
+export const createSong = async (payload: SaveSongPayload): Promise<Song> => {
+  const response = await api.post('/songs', payload);
+  return response.data.data;
+};
+
+export const updateSong = async (
+  id: string,
+  payload: Partial<SaveSongPayload>,
+): Promise<Song> => {
+  const response = await api.patch(`/songs/${id}`, payload);
+  return response.data.data;
+};
+
 export interface SongSearchParams {
   search?: string;
   page?: number;

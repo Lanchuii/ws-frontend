@@ -86,7 +86,7 @@ const LeaderSongsViewerModal = ({ worker, onClose, onChanged }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section role="dialog" aria-modal="true" aria-label="Leader song repertoire" className="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
+      <section role="dialog" aria-modal="true" aria-label="Leader song repertoire" className="song-dialog flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl">
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-semibold uppercase text-amber-700">
